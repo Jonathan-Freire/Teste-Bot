@@ -1,0 +1,42 @@
+05-08-2025 14:06:54 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+05-08-2025 14:06:54 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+05-08-2025 14:06:54 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
+05-08-2025 14:06:54 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+05-08-2025 14:06:55 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+05-08-2025 14:06:55 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+05-08-2025 14:06:55 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
+05-08-2025 14:06:55 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+05-08-2025 14:07:24 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'quais os 5 produtos mais vendidos?' ---
+05-08-2025 14:07:24 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
+05-08-2025 14:07:24 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'quais os 5 produtos mais vendidos?'
+05-08-2025 14:07:28 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'criterio_classificacao': 'mais_vendidos', 'limite': 5, 'periodo_tempo': 'sempre'}
+05-08-2025 14:07:28 - INFO - app.core.orquestrador - [_manipular_produtos_classificados] - Intenção 'buscar_produtos_classificados' detectada.
+05-08-2025 14:07:28 - INFO - app.ferramentas.ferramentas_sql - [construir_query_produtos_classificados] - Construindo query de ranking com filtros: {'marca': None, 'nome_produto': None}, critério: mais_vendidos, período: sempre
+05-08-2025 14:07:28 - ERROR - app.core.orquestrador - [gerenciar_consulta_usuario] - Erro inesperado na orquestração: executar_consulta_selecao() got an unexpected keyword argument 'bd'
+Traceback (most recent call last):
+  File "P:\Informatica\Projetos\Projetos-Ajustados\02-Python\IA-Atendimento\app\core\orquestrador.py", line 119, in gerenciar_consulta_usuario
+    resultado_bd = await executar_consulta_selecao(sql=query_sql, bd='prod')
+TypeError: executar_consulta_selecao() got an unexpected keyword argument 'bd'
+05-08-2025 14:08:24 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+05-08-2025 14:08:25 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+05-08-2025 14:08:25 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+05-08-2025 14:08:25 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
+05-08-2025 14:08:25 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+05-08-2025 14:08:32 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+05-08-2025 14:08:33 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+05-08-2025 14:08:33 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+05-08-2025 14:08:33 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
+05-08-2025 14:08:33 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+05-08-2025 14:08:33 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'quais os 5 produtos mais vendidos?' ---
+05-08-2025 14:08:33 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
+05-08-2025 14:08:33 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'quais os 5 produtos mais vendidos?'
+05-08-2025 14:08:35 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'limite': 5, 'periodo_tempo': 'sempre'}
+05-08-2025 14:08:35 - INFO - app.core.orquestrador - [_manipular_produtos_classificados] - Intenção 'buscar_produtos_classificados' detectada.
+05-08-2025 14:08:35 - ERROR - app.core.orquestrador - [gerenciar_consulta_usuario] - Erro de negócio ou de execução durante a orquestração: Critério de classificação não especificado (ex: mais vendidos).
+Traceback (most recent call last):
+  File "P:\Informatica\Projetos\Projetos-Ajustados\02-Python\IA-Atendimento\app\core\orquestrador.py", line 114, in gerenciar_consulta_usuario
+    query_sql = await manipulador(dados_intencao)
+  File "P:\Informatica\Projetos\Projetos-Ajustados\02-Python\IA-Atendimento\app\core\orquestrador.py", line 34, in _manipular_produtos_classificados
+    raise ValueError("Critério de classificação não especificado (ex: mais vendidos).")
+ValueError: Critério de classificação não especificado (ex: mais vendidos).
+05-08-2025 14:12:10 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...

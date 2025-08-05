@@ -1,42 +1,60 @@
-05-08-2025 14:06:54 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
-05-08-2025 14:06:54 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
-05-08-2025 14:06:54 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
-05-08-2025 14:06:54 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
-05-08-2025 14:06:55 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
-05-08-2025 14:06:55 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
-05-08-2025 14:06:55 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
-05-08-2025 14:06:55 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
-05-08-2025 14:07:24 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'quais os 5 produtos mais vendidos?' ---
-05-08-2025 14:07:24 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
-05-08-2025 14:07:24 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'quais os 5 produtos mais vendidos?'
-05-08-2025 14:07:28 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'criterio_classificacao': 'mais_vendidos', 'limite': 5, 'periodo_tempo': 'sempre'}
-05-08-2025 14:07:28 - INFO - app.core.orquestrador - [_manipular_produtos_classificados] - Intenção 'buscar_produtos_classificados' detectada.
-05-08-2025 14:07:28 - INFO - app.ferramentas.ferramentas_sql - [construir_query_produtos_classificados] - Construindo query de ranking com filtros: {'marca': None, 'nome_produto': None}, critério: mais_vendidos, período: sempre
-05-08-2025 14:07:28 - ERROR - app.core.orquestrador - [gerenciar_consulta_usuario] - Erro inesperado na orquestração: executar_consulta_selecao() got an unexpected keyword argument 'bd'
-Traceback (most recent call last):
-  File "P:\Informatica\Projetos\Projetos-Ajustados\02-Python\IA-Atendimento\app\core\orquestrador.py", line 119, in gerenciar_consulta_usuario
-    resultado_bd = await executar_consulta_selecao(sql=query_sql, bd='prod')
-TypeError: executar_consulta_selecao() got an unexpected keyword argument 'bd'
-05-08-2025 14:08:24 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
-05-08-2025 14:08:25 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
-05-08-2025 14:08:25 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
-05-08-2025 14:08:25 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
-05-08-2025 14:08:25 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
-05-08-2025 14:08:32 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
-05-08-2025 14:08:33 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
-05-08-2025 14:08:33 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
-05-08-2025 14:08:33 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
-05-08-2025 14:08:33 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
-05-08-2025 14:08:33 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'quais os 5 produtos mais vendidos?' ---
-05-08-2025 14:08:33 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
-05-08-2025 14:08:33 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'quais os 5 produtos mais vendidos?'
-05-08-2025 14:08:35 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'limite': 5, 'periodo_tempo': 'sempre'}
-05-08-2025 14:08:35 - INFO - app.core.orquestrador - [_manipular_produtos_classificados] - Intenção 'buscar_produtos_classificados' detectada.
-05-08-2025 14:08:35 - ERROR - app.core.orquestrador - [gerenciar_consulta_usuario] - Erro de negócio ou de execução durante a orquestração: Critério de classificação não especificado (ex: mais vendidos).
-Traceback (most recent call last):
-  File "P:\Informatica\Projetos\Projetos-Ajustados\02-Python\IA-Atendimento\app\core\orquestrador.py", line 114, in gerenciar_consulta_usuario
-    query_sql = await manipulador(dados_intencao)
-  File "P:\Informatica\Projetos\Projetos-Ajustados\02-Python\IA-Atendimento\app\core\orquestrador.py", line 34, in _manipular_produtos_classificados
-    raise ValueError("Critério de classificação não especificado (ex: mais vendidos).")
-ValueError: Critério de classificação não especificado (ex: mais vendidos).
-05-08-2025 14:12:10 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+05-08-2025 14:55:51 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+05-08-2025 14:55:51 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+05-08-2025 14:55:51 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
+05-08-2025 14:55:51 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+05-08-2025 14:55:58 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+05-08-2025 14:56:00 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+05-08-2025 14:56:00 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+05-08-2025 14:56:00 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://127.0.0.1:11434
+05-08-2025 14:56:00 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+05-08-2025 14:56:22 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'quais os 5 produtos mais vendidos?' ---
+05-08-2025 14:56:22 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
+05-08-2025 14:56:22 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'quais os 5 produtos mais vendidos?'
+05-08-2025 14:56:27 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'entidades': {'criterio_classificacao': 'mais_vendidos'}, 'mensagem_esclarecimento': None}
+05-08-2025 14:56:27 - INFO - app.ferramentas.ferramentas_sql - [construir_query_produtos_classificados] - Construindo query de ranking com critério: mais_vendidos
+05-08-2025 14:56:27 - INFO - app.db.consultas - [executar_consulta_selecao] - Iniciando execução de query SELECT no banco de dados.
+05-08-2025 14:56:27 - DEBUG - app.db.consultas - [_gerenciar_conexao_bd] - Conexão com o banco 'prod' estabelecida com sucesso.
+05-08-2025 14:56:27 - DEBUG - app.db.consultas - [_executar_sincronamente] - Executando SQL: 
+        SELECT * FROM (
+            SELECT P.CODPROD, P.DESCRICAO, P.PVENDA, COUNT(PE.CODPROD) AS TOTAL_VENDIDO FROM PCPRODUT P LEFT JOIN PCPEDI PE ON P.CODPROD = PE.CODPROD LEFT JOIN PCPEDC PC ON PE.NUMPED = PC.NUMPED
+            WHERE P.DTEXCLUSAO IS NULL GROUP BY P.CODPROD, P.DESCRICAO, P.PVENDA ORDER BY TOTAL_VENDIDO DESC
+        ) WHERE ROWNUM <= :limite
+     com parâmetros: {'limite': 10}
+05-08-2025 15:06:09 - INFO - app.db.consultas - [_executar_sincronamente] - 10 registros retornados do banco.
+05-08-2025 15:06:09 - DEBUG - app.db.consultas - [_gerenciar_conexao_bd] - Conexão com o banco de dados fechada.
+05-08-2025 15:06:09 - INFO - app.agentes.agente_sumarizador - [sumarizar_resultados] - Iniciando a sumarização dos resultados.
+05-08-2025 15:06:09 - DEBUG - app.agentes.agente_sumarizador - [sumarizar_resultados] - Enviando 10 registros para sumarização.
+05-08-2025 15:06:20 - INFO - app.agentes.agente_sumarizador - [sumarizar_resultados] - Sumarização gerada com sucesso.
+05-08-2025 15:06:20 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- FIM DA ORQUESTRAÇÃO ---
+05-08-2025 16:14:54 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'quais os 5 produtos mais vendidos?' ---
+05-08-2025 16:14:54 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
+05-08-2025 16:14:54 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'quais os 5 produtos mais vendidos?'
+05-08-2025 16:14:59 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'entidades': {'criterio_classificacao': 'mais_vendidos'}, 'mensagem_esclarecimento': None}
+05-08-2025 16:14:59 - INFO - app.ferramentas.ferramentas_sql - [construir_query_produtos_classificados] - Construindo query de ranking com critério: mais_vendidos
+05-08-2025 16:14:59 - INFO - app.db.consultas - [executar_consulta_selecao] - Iniciando execução de query SELECT no banco de dados.
+05-08-2025 16:14:59 - DEBUG - app.db.consultas - [_gerenciar_conexao_bd] - Conexão com o banco 'prod' estabelecida com sucesso.
+05-08-2025 16:14:59 - DEBUG - app.db.consultas - [_executar_sincronamente] - Executando SQL: 
+        SELECT * FROM (
+            SELECT P.CODPROD, P.DESCRICAO, P.PVENDA, COUNT(PE.CODPROD) AS TOTAL_VENDIDO FROM PCPRODUT P LEFT JOIN PCPEDI PE ON P.CODPROD = PE.CODPROD LEFT JOIN PCPEDC PC ON PE.NUMPED = PC.NUMPED
+            WHERE P.DTEXCLUSAO IS NULL GROUP BY P.CODPROD, P.DESCRICAO, P.PVENDA ORDER BY TOTAL_VENDIDO DESC
+        ) WHERE ROWNUM <= :limite
+     com parâmetros: {'limite': 10}
+05-08-2025 16:24:46 - INFO - app.db.consultas - [_executar_sincronamente] - 10 registros retornados do banco.
+05-08-2025 16:24:46 - DEBUG - app.db.consultas - [_gerenciar_conexao_bd] - Conexão com o banco de dados fechada.
+05-08-2025 16:24:46 - INFO - app.agentes.agente_sumarizador - [sumarizar_resultados] - Iniciando a sumarização dos resultados.
+05-08-2025 16:24:46 - DEBUG - app.agentes.agente_sumarizador - [sumarizar_resultados] - Enviando 10 registros para sumarização.
+05-08-2025 16:24:57 - INFO - app.agentes.agente_sumarizador - [sumarizar_resultados] - Sumarização gerada com sucesso.
+05-08-2025 16:24:57 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- FIM DA ORQUESTRAÇÃO ---
+05-08-2025 16:31:45 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'qual o código do cliente que mais gastou mes passado?' ---
+05-08-2025 16:31:45 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
+05-08-2025 16:31:45 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'qual o código do cliente que mais gastou mes passado?'
+05-08-2025 16:31:49 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'listar_clientes_recentes', 'entidades': {'periodo_tempo': 'mes passado'}}
+05-08-2025 16:31:49 - INFO - app.ferramentas.ferramentas_sql - [construir_query_clientes_recentes] - Construindo query para clientes recentes do período: mes passado
+05-08-2025 16:31:49 - ERROR - app.core.orquestrador - [gerenciar_consulta_usuario] - Erro de negócio durante a orquestração: Período de tempo inválido para esta consulta.
+05-08-2025 16:31:53 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'qual o código do cliente que mais gastou mes passado?' ---
+05-08-2025 16:31:53 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
+05-08-2025 16:31:53 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'qual o código do cliente que mais gastou mes passado?'
+05-08-2025 16:31:55 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'listar_clientes_recentes', 'entidades': {'periodo_tempo': 'mes'}}
+05-08-2025 16:31:55 - INFO - app.ferramentas.ferramentas_sql - [construir_query_clientes_recentes] - Construindo query para clientes recentes do período: mes
+05-08-2025 16:31:55 - ERROR - app.core.orquestrador - [gerenciar_consulta_usuario] - Erro de negócio durante a orquestração: Período de tempo inválido para esta consulta.
+05-08-2025 16:32:36 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...

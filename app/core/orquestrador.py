@@ -1,134 +1,192 @@
-# app/orquestrador.py
+# app/core/orquestrador.py
 """
 Módulo orquestrador principal.
 
-Este módulo atua como o ponto de entrada para o processamento de consultas do usuário.
-Ele coordena a interação entre os diferentes agentes e ferramentas para:
-1. Extrair a intenção do usuário (`agente_roteador`).
-2. Construir a consulta SQL apropriada com base na intenção (`ferramentas_sql`).
-3. Executar a consulta no banco de dados (`consultas_bd`).
-4. Gerar um resumo em linguagem natural dos resultados (`agente_sumarizador`).
+Versão 2.1: Corrigido o erro de importação (NameError) para ResultadoQuery.
 """
 
 import logging
-from typing import Any, Dict, Awaitable, Callable
+from typing import Any, Dict, Awaitable, Callable, Tuple
 
 from langchain_community.chat_models.ollama import ChatOllama
 
-from app.agentes.agente_roteador import obter_intencao, IntencaoConsulta
+from app.agentes.agente_roteador import obter_intencao
 from app.agentes.agente_sumarizador import sumarizar_resultados
 from app.ferramentas import ferramentas_sql
+from app.ferramentas.ferramentas_sql import ResultadoQuery
 from app.db.consultas import executar_consulta_selecao, encontrar_clientes_por_nome_ou_codigo
 
-# Configura o logger para este módulo
 logger = logging.getLogger(__name__)
 
-# Assinatura de tipo para as funções de manipulação de intenção
-TipoManipuladorIntencao = Callable[[IntencaoConsulta], Awaitable[str]]
+TipoManipuladorIntencao = Callable[[Dict[str, Any]], Awaitable[Tuple[str, Dict[str, Any]]]]
 
+# --- Funções Auxiliares do Orquestrador ---
 
-async def _manipular_produtos_classificados(dados_intencao: IntencaoConsulta) -> str:
-    """Constrói a query para buscar produtos classificados."""
-    logger.info("Intenção 'buscar_produtos_classificados' detectada.")
-    if not dados_intencao.criterio_classificacao:
-        raise ValueError("Critério de classificação não especificado (ex: mais vendidos).")
-    
-    filtros = {"marca": dados_intencao.marca, "nome_produto": dados_intencao.nome_produto}
-    return ferramentas_sql.construir_query_produtos_classificados(
-        filtros=filtros,
-        criterio_classificacao=dados_intencao.criterio_classificacao,
-        periodo_tempo=dados_intencao.periodo_tempo or "sempre",
-        limite=dados_intencao.limite or 10
-    )
+async def _resolver_cliente(entidades: Dict[str, Any]) -> int:
+    """Função auxiliar para encontrar o código do cliente a partir do nome ou código."""
+    codigo_cliente = entidades.get("codigo_cliente")
+    nome_cliente = entidades.get("nome_cliente")
 
-async def _manipular_registros_vendas(dados_intencao: IntencaoConsulta) -> str:
-    """Constrói a query para listar registros de vendas de um cliente."""
-    logger.info("Intenção 'listar_registros_vendas' detectada.")
-    codigo_cliente = dados_intencao.codigo_cliente
-    nome_cliente = dados_intencao.nome_cliente
+    if codigo_cliente:
+        return int(codigo_cliente)
 
-    if not codigo_cliente and nome_cliente:
+    if nome_cliente:
         resultados_cliente = await encontrar_clientes_por_nome_ou_codigo(nome=nome_cliente)
-        if resultados_cliente["erro"] or not resultados_cliente["dados"]:
+        if resultados_cliente.get("erro") or not resultados_cliente.get("dados"):
             raise ValueError(f"Nenhum cliente encontrado com o nome '{nome_cliente}'.")
         if len(resultados_cliente["dados"]) > 1:
             opcoes = "\n".join([f"- Código: {c['codcli']}, Nome: {c['cliente']}" for c in resultados_cliente["dados"]])
-            raise ValueError(f"Encontrei mais de um cliente. Especifique qual deles você deseja:\n{opcoes}")
-        codigo_cliente = resultados_cliente["dados"][0]['codcli']
+            raise ValueError(f"Encontrei mais de um cliente. Por favor, especifique qual deles você deseja:\n{opcoes}")
+        return resultados_cliente["dados"][0]['codcli']
 
-    if not codigo_cliente:
-        raise ValueError("Para listar os pedidos, por favor, informe o nome ou o código do cliente.")
-        
-    filtros = {"codigo_cliente": codigo_cliente, "periodo_tempo": dados_intencao.periodo_tempo or "sempre"}
-    return ferramentas_sql.construir_query_registros_vendas(filtros=filtros)
+    raise ValueError("Para esta consulta, por favor, informe o nome ou o código do cliente.")
 
-async def _manipular_detalhes_produto(dados_intencao: IntencaoConsulta) -> str:
-    """Constrói a query para buscar detalhes de um produto específico."""
-    logger.info("Intenção 'buscar_detalhes_produto' detectada.")
-    if not dados_intencao.nome_produto:
-        raise ValueError("Por favor, especifique o nome do produto que você está procurando.")
-    filtros = {"nome_produto": dados_intencao.nome_produto}
-    return ferramentas_sql.construir_query_detalhes_produto(filtros=filtros)
+# --- Manipuladores de Intenção ---
 
-async def _manipular_itens_pedido(dados_intencao: IntencaoConsulta) -> str:
-    """Constrói a query para obter os itens de um pedido."""
-    logger.info("Intenção 'obter_itens_pedido' detectada.")
-    if not dados_intencao.id_pedido:
-        raise ValueError("Por favor, informe o número do pedido para que eu possa listar os itens.")
-    return ferramentas_sql.construir_query_itens_pedido(id_pedido=dados_intencao.id_pedido)
+async def _manipular_produtos_classificados(entidades: Dict[str, Any]) -> ResultadoQuery:
+    criterio = entidades.get("criterio_classificacao")
+    if not criterio:
+        raise ValueError("Critério de classificação não especificado (ex: mais vendidos).")
+    return ferramentas_sql.construir_query_produtos_classificados(
+        filtros={},
+        criterio_classificacao=criterio,
+        periodo_tempo=entidades.get("periodo_tempo", "sempre"),
+        limite=entidades.get("limite", 10)
+    )
+
+async def _manipular_registros_vendas(entidades: Dict[str, Any]) -> ResultadoQuery:
+    codigo_cliente = await _resolver_cliente(entidades)
+    return ferramentas_sql.construir_query_registros_vendas(
+        codigo_cliente=codigo_cliente,
+        periodo_tempo=entidades.get("periodo_tempo", "sempre"),
+        limite=entidades.get("limite", 50)
+    )
+
+async def _manipular_detalhes_produto(entidades: Dict[str, Any]) -> ResultadoQuery:
+    nome_produto = entidades.get("nome_produto")
+    if not nome_produto:
+        raise ValueError("Por favor, especifique o nome do produto.")
+    return ferramentas_sql.construir_query_detalhes_produto(nome_produto=nome_produto)
+
+async def _manipular_itens_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
+    id_pedido = entidades.get("id_pedido")
+    if not id_pedido:
+        raise ValueError("Por favor, informe o número do pedido.")
+    return ferramentas_sql.construir_query_itens_pedido(id_pedido=int(id_pedido))
+
+# Novos Manipuladores
+async def _manipular_limite_credito(entidades: Dict[str, Any]) -> ResultadoQuery:
+    codigo_cliente = await _resolver_cliente(entidades)
+    return ferramentas_sql.construir_query_limite_credito(codigo_cliente)
+
+async def _manipular_status_cliente(entidades: Dict[str, Any]) -> ResultadoQuery:
+    codigo_cliente = await _resolver_cliente(entidades)
+    return ferramentas_sql.construir_query_status_cliente(codigo_cliente)
+
+async def _manipular_contato_cliente(entidades: Dict[str, Any]) -> ResultadoQuery:
+    codigo_cliente = await _resolver_cliente(entidades)
+    return ferramentas_sql.construir_query_contato_cliente(codigo_cliente)
+
+async def _manipular_endereco_cliente(entidades: Dict[str, Any]) -> ResultadoQuery:
+    codigo_cliente = await _resolver_cliente(entidades)
+    return ferramentas_sql.construir_query_endereco_cliente(codigo_cliente)
+
+async def _manipular_clientes_por_cidade(entidades: Dict[str, Any]) -> ResultadoQuery:
+    cidade = entidades.get("cidade")
+    if not cidade:
+        raise ValueError("Por favor, especifique a cidade.")
+    return ferramentas_sql.construir_query_clientes_por_cidade(cidade, entidades.get("limite", 20))
+
+async def _manipular_clientes_recentes(entidades: Dict[str, Any]) -> ResultadoQuery:
+    periodo = entidades.get("periodo_tempo")
+    if not periodo or periodo == "sempre":
+        raise ValueError("Por favor, especifique um período de tempo (ex: 'este mês', 'hoje').")
+    return ferramentas_sql.construir_query_clientes_recentes(periodo, entidades.get("limite", 20))
+
+async def _manipular_produtos_por_marca(entidades: Dict[str, Any]) -> ResultadoQuery:
+    marca = entidades.get("marca")
+    if not marca:
+        raise ValueError("Por favor, especifique a marca do produto.")
+    return ferramentas_sql.construir_query_produtos_por_marca(marca, entidades.get("limite", 20))
+
+async def _manipular_produtos_descontinuados(entidades: Dict[str, Any]) -> ResultadoQuery:
+    return ferramentas_sql.construir_query_produtos_descontinuados(entidades.get("limite", 20))
+
+async def _manipular_posicao_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
+    id_pedido = entidades.get("id_pedido")
+    if not id_pedido:
+        raise ValueError("Por favor, informe o número do pedido.")
+    return ferramentas_sql.construir_query_posicao_pedido(int(id_pedido))
+
+async def _manipular_valor_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
+    id_pedido = entidades.get("id_pedido")
+    if not id_pedido:
+        raise ValueError("Por favor, informe o número do pedido.")
+    return ferramentas_sql.construir_query_valor_pedido(int(id_pedido))
+
+async def _manipular_data_entrega_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
+    id_pedido = entidades.get("id_pedido")
+    if not id_pedido:
+        raise ValueError("Por favor, informe o número do pedido.")
+    return ferramentas_sql.construir_query_data_entrega_pedido(int(id_pedido))
+
+async def _manipular_pedidos_por_posicao(entidades: Dict[str, Any]) -> ResultadoQuery:
+    posicao = entidades.get("posicao")
+    if not posicao:
+        raise ValueError("Por favor, especifique a posição dos pedidos (ex: 'bloqueado').")
+    return ferramentas_sql.construir_query_pedidos_por_posicao(posicao, entidades.get("limite", 20))
 
 
-# Mapeia as strings de intenção para suas respectivas funções de manipulação
+# Mapeamento expandido de intenções para suas respectivas funções de manipulação
 MAPEAMENTO_INTENCOES: Dict[str, TipoManipuladorIntencao] = {
     "buscar_produtos_classificados": _manipular_produtos_classificados,
     "listar_registros_vendas": _manipular_registros_vendas,
     "buscar_detalhes_produto": _manipular_detalhes_produto,
     "obter_itens_pedido": _manipular_itens_pedido,
+    "consultar_limite_credito": _manipular_limite_credito,
+    "verificar_status_cliente": _manipular_status_cliente,
+    "buscar_dados_contato_cliente": _manipular_contato_cliente,
+    "buscar_endereco_cliente": _manipular_endereco_cliente,
+    "listar_clientes_por_cidade": _manipular_clientes_por_cidade,
+    "listar_clientes_recentes": _manipular_clientes_recentes,
+    "listar_produtos_por_marca": _manipular_produtos_por_marca,
+    "listar_produtos_descontinuados": _manipular_produtos_descontinuados,
+    "verificar_posicao_pedido": _manipular_posicao_pedido,
+    "consultar_valor_pedido": _manipular_valor_pedido,
+    "consultar_data_entrega_pedido": _manipular_data_entrega_pedido,
+    "listar_pedidos_por_posicao": _manipular_pedidos_por_posicao,
 }
 
-
 async def gerenciar_consulta_usuario(llm: ChatOllama, texto_usuario: str) -> str:
-    """
-    Orquestra o fluxo completo de processamento da consulta do usuário.
-
-    Args:
-        llm: A instância do modelo de linguagem a ser usada.
-        texto_usuario: A pergunta original do usuário.
-
-    Returns:
-        A resposta final formatada para o usuário.
-    """
     logger.info(f"--- INÍCIO DA ORQUESTRAÇÃO PARA: '{texto_usuario}' ---")
     try:
-        # 1. Roteamento da intenção
         dados_intencao = await obter_intencao(llm, texto_usuario)
         intencao = dados_intencao.intencao
+        entidades = dados_intencao.entidades
 
-        # 2. Despacho para o manipulador correto
+        if intencao == "desconhecido":
+            return "Desculpe, não entendi sua solicitação. Você pode perguntar sobre clientes, produtos ou pedidos."
+        if intencao == "necessita_esclarecimento":
+            return dados_intencao.mensagem_esclarecimento
+
         manipulador = MAPEAMENTO_INTENCOES.get(intencao)
         if not manipulador:
-            logger.warning(f"Intenção desconhecida ou não suportada: '{intencao}'")
-            return "Desculpe, não entendi sua solicitação. Você pode pedir para ver os produtos mais vendidos, listar os pedidos de um cliente ou ver os itens de um pedido específico."
+            raise RuntimeError(f"Nenhum manipulador definido para a intenção '{intencao}'.")
 
-        # 3. Construção da Query SQL
-        query_sql = await manipulador(dados_intencao)
-        if not query_sql:
-            raise RuntimeError("A ferramenta de construção de query não retornou uma string SQL.")
-
-        # 4. Execução da Query
-        resultado_bd = await executar_consulta_selecao(sql=query_sql, db='prod')
+        query_sql, params = await manipulador(entidades)
+        
+        resultado_bd = await executar_consulta_selecao(sql=query_sql, params=params, db='prod')
         if resultado_bd["erro"]:
-            raise ConnectionError(f"Erro ao executar a query no banco de dados: {resultado_bd['erro']}")
+            raise ConnectionError(f"Erro ao consultar o banco de dados: {resultado_bd['erro']}")
 
-        # 5. Sumarização e Resposta Final
         resposta_final = await sumarizar_resultados(llm, texto_usuario, resultado_bd["dados"])
         
         logger.info("--- FIM DA ORQUESTRAÇÃO ---")
         return resposta_final
 
     except (ValueError, RuntimeError, ConnectionError) as e:
-        logger.error(f"Erro de negócio ou de execução durante a orquestração: {e}", exc_info=True)
-        return str(e)  # Retorna a mensagem de erro de negócio diretamente para o usuário
+        logger.error(f"Erro de negócio durante a orquestração: {e}", exc_info=False)
+        return str(e)
     except Exception as e:
         logger.error(f"Erro inesperado na orquestração: {e}", exc_info=True)
-        return "Desculpe, ocorreu um erro inesperado ao processar sua solicitação. Tente novamente mais tarde."
+        return "Desculpe, ocorreu um erro inesperado. Tente novamente mais tarde."

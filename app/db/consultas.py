@@ -1,9 +1,11 @@
+# app/db/consultas.py
 """
 Módulo de acesso a dados para interação com o banco de dados Oracle.
 
-Este módulo encapsula toda a lógica para executar consultas SQL, garantindo
-práticas seguras (como o uso de prepared statements para prevenir SQL Injection)
-e um gerenciamento de conexão eficiente.
+Versão 2.1: A função `executar_consulta_selecao` foi refatorada para retornar
+um dicionário padronizado com as chaves 'dados' e 'erro', melhorando o
+tratamento de erros no orquestrador. A função `encontrar_clientes_por_nome_ou_codigo`
+também foi ajustada para usar este novo padrão de retorno.
 """
 
 import logging
@@ -11,9 +13,7 @@ import asyncio
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
-# Importações de módulos customizados do projeto
-# [Nota]: A dependência de 'adicionar_modulo' sugere uma configuração de path
-# que poderia ser substituída por uma estrutura de pacotes Python padrão.
+# (Assumindo que os helpers e dependências externas estão configurados corretamente)
 from helpers_compartilhados.helpers import adicionar_modulo
 adicionar_modulo('conexaodb')
 from DB_Oracle_Encrypted import testarConexao, conexao
@@ -30,15 +30,6 @@ def _gerenciar_conexao_bd(nome_bd: str = 'prod'):
 
     Garante que a conexão e o cursor sejam abertos e fechados corretamente,
     mesmo em caso de erros.
-
-    Args:
-        nome_bd: O nome do banco de dados para conectar ('prod', 'dev', etc.).
-
-    Yields:
-        O objeto cursor pronto para execução de queries.
-
-    Raises:
-        ConnectionError: Se não for possível estabelecer conexão com o BD.
     """
     if not testarConexao(nome_bd):
         raise ConnectionError("Não foi possível estabelecer conexão com o banco de dados.")
@@ -55,7 +46,6 @@ def _gerenciar_conexao_bd(nome_bd: str = 'prod'):
         logger.error(f"Erro durante a transação com o banco de dados: {e}", exc_info=True)
         if con:
             con.rollback()
-        # Re-levanta a exceção para ser tratada pela camada de serviço
         raise ExcecaoRobo(f"Erro na operação de banco de dados: {e}", type(e).__name__) from e
     finally:
         if cursor:
@@ -65,9 +55,10 @@ def _gerenciar_conexao_bd(nome_bd: str = 'prod'):
         logger.debug("Conexão com o banco de dados fechada.")
 
 
-async def executar_consulta_selecao(sql: str, params: Optional[Dict[str, Any]] = None, db: str = 'prod') -> List[Dict[str, Any]]:
+# --- FUNÇÃO CORRIGIDA ---
+async def executar_consulta_selecao(sql: str, params: Optional[Dict[str, Any]] = None, db: str = 'prod') -> Dict[str, Any]:
     """
-    Executa uma query SELECT de forma assíncrona e segura.
+    Executa uma query SELECT de forma assíncrona e segura, retornando um dicionário.
 
     Args:
         sql: A string da query SQL a ser executada, com placeholders.
@@ -75,48 +66,48 @@ async def executar_consulta_selecao(sql: str, params: Optional[Dict[str, Any]] =
         db: O nome do banco de dados a ser consultado.
 
     Returns:
-        Uma lista de dicionários, onde cada dicionário representa uma linha do resultado.
-
-    Raises:
-        ExcecaoRobo: Em caso de erro na execução da query.
+        Um dicionário com as chaves 'dados' (uma lista de dicionários) e 'erro' (uma string ou None).
     """
     logger.info("Iniciando execução de query SELECT no banco de dados.")
 
-    def _executar_sincronamente() -> List[Dict[str, Any]]:
+    def _executar_sincronamente() -> Dict[str, Any]:
+        """Função interna síncrona para ser executada em uma thread separada."""
         with _gerenciar_conexao_bd(db) as cursor:
             logger.debug(f"Executando SQL: {sql} com parâmetros: {params}")
             cursor.execute(sql, params or {})
             
+            # Se a query não retornar colunas (ex: um UPDATE sem RETURNING), retorna lista vazia.
             if not cursor.description:
-                return []
+                return {"dados": [], "erro": None}
 
+            # Constrói a lista de dicionários a partir do resultado
             nomes_colunas = [desc[0].lower() for desc in cursor.description]
             linhas = cursor.fetchall()
             logger.info(f"{len(linhas)} registros retornados do banco.")
             
-            return [dict(zip(nomes_colunas, linha)) for linha in linhas]
+            dados = [dict(zip(nomes_colunas, linha)) for linha in linhas]
+            return {"dados": dados, "erro": None}
 
     try:
-        # Executa a função de I/O síncrona em uma thread separada
+        # Executa a função de I/O de banco de dados (que é síncrona) em uma thread
+        # separada para não bloquear o event loop do asyncio.
         return await asyncio.to_thread(_executar_sincronamente)
-    except (ExcecaoRobo, ConnectionError) as e:
-        # Propaga a exceção para ser tratada no orquestrador
-        raise e
+    except Exception as e:
+        logger.error(f"Erro ao executar a consulta: {e}", exc_info=True)
+        # Em caso de qualquer exceção, retorna o erro no formato padronizado.
+        return {"dados": None, "erro": str(e)}
 
-
-async def encontrar_clientes_por_nome_ou_codigo(nome: Optional[str] = None, codigo: Optional[int] = None) -> List[Dict[str, Any]]:
+# --- FUNÇÃO CORRIGIDA E COMPLETADA ---
+async def encontrar_clientes_por_nome_ou_codigo(nome: Optional[str] = None, codigo: Optional[int] = None) -> Dict[str, Any]:
     """
-    Busca clientes por parte do nome/fantasia ou por código exato usando prepared statements.
+    Busca clientes por parte do nome/fantasia ou por código exato.
 
     Args:
         nome: Parte do nome ou nome fantasia do cliente.
         codigo: Código exato do cliente.
 
     Returns:
-        Uma lista de dicionários com os dados dos clientes encontrados.
-
-    Raises:
-        ValueError: Se nem nome nem código forem fornecidos.
+        Um dicionário no formato {'dados': [...], 'erro': None} ou {'dados': None, 'erro': '...'}.
     """
     if not nome and not codigo:
         raise ValueError("Nome ou código do cliente deve ser fornecido.")
@@ -139,3 +130,6 @@ async def encontrar_clientes_por_nome_ou_codigo(nome: Optional[str] = None, codi
         WHERE {declaracao_where}
         FETCH FIRST 10 ROWS ONLY
     """
+    
+    # Chama a função principal de execução e retorna seu resultado padronizado
+    return await executar_consulta_selecao(sql=sql, params=params)

@@ -2,10 +2,9 @@
 """
 Módulo responsável por interpretar a intenção do usuário.
 
-Versão 2.0: Totalmente expandido para cobrir uma vasta gama de consultas de negócio,
-incluindo detalhes de clientes, produtos e pedidos. A estrutura de intenções foi
-ampliada para transformar o bot em uma ferramenta de análise de dados conversacional
-completa, mantendo a capacidade de solicitar esclarecimentos quando necessário.
+Versão 2.2: O prompt foi fortalecido com regras mais explícitas sobre os
+valores permitidos para `criterio_classificacao`, visando reduzir a chance
+de o LLM extrair valores inválidos e causar erros de negócio.
 """
 
 import logging
@@ -33,9 +32,10 @@ TipoIntencao = Literal[
     "buscar_endereco_cliente",
     "listar_clientes_por_cidade",
     "listar_clientes_recentes",
+    "buscar_clientes_classificados",
 
     # Novas Intenções - Produtos
-    "buscar_detalhes_produto", # Intenção original melhorada
+    "buscar_detalhes_produto", 
     "listar_produtos_por_marca",
     "listar_produtos_descontinuados",
 
@@ -81,9 +81,10 @@ Você é um especialista em análise de linguagem natural para um sistema de ven
     - `buscar_endereco_cliente`: Para endereço de entrega. Requer `nome_cliente` ou `codigo_cliente`.
     - `listar_clientes_por_cidade`: Para listar clientes de uma cidade específica. Requer `cidade`.
     - `listar_clientes_recentes`: Para clientes cadastrados recentemente. Requer `periodo_tempo`.
+    - `buscar_clientes_classificados`: Para rankings de clientes (quem mais comprou, etc.). Requer `criterio_classificacao`. O único valor válido para criterio_classificacao é 'maior_valor_compras'.
 
 2.  **Intenções de Produto**:
-    - `buscar_produtos_classificados`: Para rankings (mais vendidos, etc.). Requer `criterio_classificacao`.
+    - `buscar_produtos_classificados`: Para rankings de produtos. Requer `criterio_classificacao`. Os valores válidos para criterio_classificacao são 'mais_vendidos' e 'menos_vendidos'.
     - `buscar_detalhes_produto`: Para informações gerais de um produto (peso, marca, fornecedor). Requer `nome_produto` ou `codigo_produto`.
     - `listar_produtos_por_marca`: Para listar produtos de uma marca. Requer `marca`.
     - `listar_produtos_descontinuados`: Para produtos com data de exclusão.
@@ -108,20 +109,17 @@ Você é um especialista em análise de linguagem natural para um sistema de ven
 - Texto: "o cliente Comercial Esperança está ativo?"
   JSON: {{"intencao": "verificar_status_cliente", "entidades": {{"nome_cliente": "Comercial Esperança"}}}}
 
-- Texto: "qual o endereço de entrega do cliente 456"
-  JSON: {{"intencao": "buscar_endereco_cliente", "entidades": {{"codigo_cliente": 456}}}}
+- Texto: "qual o cliente que mais comprou no último mês?"
+  JSON: {{"intencao": "buscar_clientes_classificados", "entidades": {{"criterio_classificacao": "maior_valor_compras", "periodo_tempo": "ultimo_mes", "limite": 1}}}}
 
-- Texto: "me liste os clientes de Bauru"
-  JSON: {{"intencao": "listar_clientes_por_cidade", "entidades": {{"cidade": "Bauru"}}}}
+- Texto: "top 5 clientes que mais gastaram"
+  JSON: {{"intencao": "buscar_clientes_classificados", "entidades": {{"criterio_classificacao": "maior_valor_compras", "limite": 5}}}}
 
-- Texto: "qual o peso do produto ARROZ TIPO 1?"
-  JSON: {{"intencao": "buscar_detalhes_produto", "entidades": {{"nome_produto": "ARROZ TIPO 1"}}}}
+- Texto: "quais os 5 produtos mais vendidos?"
+  JSON: {{"intencao": "buscar_produtos_classificados", "entidades": {{"criterio_classificacao": "mais_vendidos", "limite": 5}}}}
 
 - Texto: "qual a posição do pedido 98765?"
   JSON: {{"intencao": "verificar_posicao_pedido", "entidades": {{"id_pedido": 98765}}}}
-
-- Texto: "me mostre os pedidos bloqueados"
-  JSON: {{"intencao": "listar_pedidos_por_posicao", "entidades": {{"posicao": "B"}}}}
 
 - Texto: "quero ver os pedidos"
   JSON: {{"intencao": "necessita_esclarecimento", "entidades": {{}}, "mensagem_esclarecimento": "De qual cliente você gostaria de ver os pedidos? Por favor, informe o nome ou código."}}

@@ -2,7 +2,8 @@
 """
 Módulo orquestrador principal.
 
-Versão 2.1: Corrigido o erro de importação (NameError) para ResultadoQuery.
+Versão 2.3: Corrigido TypeError que ocorria ao chamar uma função síncrona
+com await no manipulador `_manipular_clientes_classificados`.
 """
 
 import logging
@@ -18,7 +19,8 @@ from app.db.consultas import executar_consulta_selecao, encontrar_clientes_por_n
 
 logger = logging.getLogger(__name__)
 
-TipoManipuladorIntencao = Callable[[Dict[str, Any]], Awaitable[Tuple[str, Dict[str, Any]]]]
+# A assinatura do manipulador espera um Awaitable, então as funções devem ser async.
+TipoManipuladorIntencao = Callable[[Dict[str, Any]], Awaitable[ResultadoQuery]]
 
 # --- Funções Auxiliares do Orquestrador ---
 
@@ -48,7 +50,6 @@ async def _manipular_produtos_classificados(entidades: Dict[str, Any]) -> Result
     if not criterio:
         raise ValueError("Critério de classificação não especificado (ex: mais vendidos).")
     return ferramentas_sql.construir_query_produtos_classificados(
-        filtros={},
         criterio_classificacao=criterio,
         periodo_tempo=entidades.get("periodo_tempo", "sempre"),
         limite=entidades.get("limite", 10)
@@ -74,7 +75,6 @@ async def _manipular_itens_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
         raise ValueError("Por favor, informe o número do pedido.")
     return ferramentas_sql.construir_query_itens_pedido(id_pedido=int(id_pedido))
 
-# Novos Manipuladores
 async def _manipular_limite_credito(entidades: Dict[str, Any]) -> ResultadoQuery:
     codigo_cliente = await _resolver_cliente(entidades)
     return ferramentas_sql.construir_query_limite_credito(codigo_cliente)
@@ -136,6 +136,19 @@ async def _manipular_pedidos_por_posicao(entidades: Dict[str, Any]) -> Resultado
         raise ValueError("Por favor, especifique a posição dos pedidos (ex: 'bloqueado').")
     return ferramentas_sql.construir_query_pedidos_por_posicao(posicao, entidades.get("limite", 20))
 
+async def _manipular_clientes_classificados(entidades: Dict[str, Any]) -> ResultadoQuery:
+    criterio = entidades.get("criterio_classificacao")
+    if not criterio:
+        raise ValueError("Critério de classificação para clientes não especificado.")
+    
+    # CORREÇÃO: Removido o 'await' pois a função chamada é síncrona.
+    # A função manipuladora precisa ser 'async' para corresponder à assinatura esperada,
+    # mas a chamada interna não deve ser aguardada se não for uma corrotina.
+    return ferramentas_sql.construir_query_clientes_classificados(
+        criterio_classificacao=criterio,
+        periodo_tempo=entidades.get("periodo_tempo", "sempre"),
+        limite=entidades.get("limite", 10)
+    )
 
 # Mapeamento expandido de intenções para suas respectivas funções de manipulação
 MAPEAMENTO_INTENCOES: Dict[str, TipoManipuladorIntencao] = {
@@ -155,6 +168,7 @@ MAPEAMENTO_INTENCOES: Dict[str, TipoManipuladorIntencao] = {
     "consultar_valor_pedido": _manipular_valor_pedido,
     "consultar_data_entrega_pedido": _manipular_data_entrega_pedido,
     "listar_pedidos_por_posicao": _manipular_pedidos_por_posicao,
+    "buscar_clientes_classificados": _manipular_clientes_classificados,
 }
 
 async def gerenciar_consulta_usuario(llm: ChatOllama, texto_usuario: str) -> str:
@@ -173,6 +187,7 @@ async def gerenciar_consulta_usuario(llm: ChatOllama, texto_usuario: str) -> str
         if not manipulador:
             raise RuntimeError(f"Nenhum manipulador definido para a intenção '{intencao}'.")
 
+        # A chamada ao manipulador agora é sempre 'await' porque todos eles são async.
         query_sql, params = await manipulador(entidades)
         
         resultado_bd = await executar_consulta_selecao(sql=query_sql, params=params, db='prod')

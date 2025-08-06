@@ -2,11 +2,9 @@
 """
 Módulo de ferramentas para construção de queries SQL seguras.
 
-Versão 3.2: Otimização específica para Oracle. Melhorias em performance através de:
-- Uso de hints específicos do Oracle
-- Otimização de joins e subconsultas
-- Melhoria no uso de índices
-- Estruturação otimizada de WHERE clauses
+Versão 3.3: Implementada validação rigorosa de períodos de tempo para evitar
+consultas sem filtro que podem sobrecarregar a base de dados. O sistema agora
+rejeita períodos inválidos ou "sempre" para consultas sensíveis.
 """
 
 import logging
@@ -24,13 +22,15 @@ ResultadoQuery = Tuple[str, Dict[str, Any]]
 def _construir_clausula_data_otimizada(periodo_tempo: str, coluna_data: str) -> Tuple[str, Dict[str, Any]]:
     """
     Constrói uma cláusula WHERE de data otimizada usando ranges.
-    Esta abordagem permite que o banco de dados utilize índices na coluna de data,
-    melhorando drasticamente a performance em comparação com o uso de TRUNC.
+    VERSÃO RIGOROSA: Agora rejeita períodos inválidos ou "sempre" para evitar sobrecarga na base.
     """
+    if not periodo_tempo or periodo_tempo.lower().strip() == "sempre":
+        raise ValueError("Período de tempo é obrigatório e não pode ser 'sempre'. Use: hoje, este_mes, ultimo_mes, etc.")
+    
     hoje = date.today()
     params = {}
     
-    periodo_normalizado = str(periodo_tempo).lower().replace(" ", "_")
+    periodo_normalizado = str(periodo_tempo).lower().replace(" ", "_").strip()
 
     if periodo_normalizado == 'hoje':
         data_inicio = datetime.combine(hoje, time.min)
@@ -39,23 +39,57 @@ def _construir_clausula_data_otimizada(periodo_tempo: str, coluna_data: str) -> 
         params['data_inicio'] = data_inicio
         params['data_fim'] = data_fim
         
-    elif periodo_normalizado == 'este_mes':
+    elif periodo_normalizado in ['este_mes', 'mes_atual']:
         data_inicio = datetime.combine(hoje.replace(day=1), time.min)
-        data_fim = datetime.combine(data_inicio + relativedelta(months=1), time.min)
+        data_fim = datetime.combine(data_inicio.date() + relativedelta(months=1), time.min)
         clausula = f"{coluna_data} >= :data_inicio AND {coluna_data} < :data_fim"
         params['data_inicio'] = data_inicio
         params['data_fim'] = data_fim
 
     elif periodo_normalizado in ['ultimo_mes', 'mes_passado']:
         data_fim = datetime.combine(hoje.replace(day=1), time.min)
-        data_inicio = data_fim - relativedelta(months=1)
+        data_inicio = datetime.combine((data_fim.date() - relativedelta(months=1)), time.min)
+        clausula = f"{coluna_data} >= :data_inicio AND {coluna_data} < :data_fim"
+        params['data_inicio'] = data_inicio
+        params['data_fim'] = data_fim
+
+    elif periodo_normalizado in ['esta_semana', 'semana_atual']:
+        # Segunda-feira da semana atual
+        dias_desde_segunda = hoje.weekday()
+        inicio_semana = hoje - relativedelta(days=dias_desde_segunda)
+        data_inicio = datetime.combine(inicio_semana, time.min)
+        data_fim = datetime.combine(inicio_semana + relativedelta(days=7), time.min)
+        clausula = f"{coluna_data} >= :data_inicio AND {coluna_data} < :data_fim"
+        params['data_inicio'] = data_inicio
+        params['data_fim'] = data_fim
+
+    elif periodo_normalizado in ['semana_passada', 'ultima_semana']:
+        # Segunda-feira da semana passada
+        dias_desde_segunda = hoje.weekday()
+        inicio_semana_atual = hoje - relativedelta(days=dias_desde_segunda)
+        inicio_semana_passada = inicio_semana_atual - relativedelta(days=7)
+        data_inicio = datetime.combine(inicio_semana_passada, time.min)
+        data_fim = datetime.combine(inicio_semana_atual, time.min)
+        clausula = f"{coluna_data} >= :data_inicio AND {coluna_data} < :data_fim"
+        params['data_inicio'] = data_inicio
+        params['data_fim'] = data_fim
+
+    elif periodo_normalizado in ['ontem']:
+        ontem = hoje - relativedelta(days=1)
+        data_inicio = datetime.combine(ontem, time.min)
+        data_fim = datetime.combine(ontem + relativedelta(days=1), time.min)
         clausula = f"{coluna_data} >= :data_inicio AND {coluna_data} < :data_fim"
         params['data_inicio'] = data_inicio
         params['data_fim'] = data_fim
         
     else:
-        return "", {}
+        periodos_validos = [
+            'hoje', 'ontem', 'este_mes', 'mes_atual', 'ultimo_mes', 'mes_passado',
+            'esta_semana', 'semana_atual', 'ultima_semana', 'semana_passada'
+        ]
+        raise ValueError(f"Período '{periodo_tempo}' não é válido. Use um dos seguintes: {', '.join(periodos_validos)}")
         
+    logger.debug(f"Período '{periodo_tempo}' convertido para range: {data_inicio} até {data_fim}")
     return clausula, params
 
 def _construir_filtro_texto_flexivel(termo: str, campos: List[str], nome_param: str) -> Tuple[str, Dict[str, Any]]:
@@ -83,8 +117,12 @@ def _construir_filtro_texto_flexivel(termo: str, campos: List[str], nome_param: 
 def construir_query_produtos_classificados(criterio_classificacao: str, periodo_tempo: str, limite: int) -> ResultadoQuery:
     """
     Constrói uma query otimizada para classificar produtos com base em critérios de vendas.
+    VERSÃO RIGOROSA: Agora exige período válido obrigatório.
     """
     logger.info(f"Construindo query de ranking de produtos com critério: {criterio_classificacao}")
+    
+    if not periodo_tempo or periodo_tempo.strip().lower() == "sempre":
+        raise ValueError("Período de tempo é obrigatório para esta consulta. Use: hoje, este_mes, ultimo_mes, etc.")
     
     mapa_sinonimos = {
         "mais_vendidos": "mais_vendidos", "maior_valor_vendas": "mais_vendidos",
@@ -98,11 +136,10 @@ def construir_query_produtos_classificados(criterio_classificacao: str, periodo_
         raise ValueError(f"Critério de classificação inválido para vendas: {criterio_classificacao}")
 
     params = {"limite": limite}
-    clausula_data_where = ""
+    
+    # Validação rigorosa: período sempre obrigatório
     clausula_data, params_data = _construir_clausula_data_otimizada(periodo_tempo, 'C.DATA')
-    if clausula_data:
-        clausula_data_where = f"AND {clausula_data}"
-        params.update(params_data)
+    params.update(params_data)
 
     # Otimizada: Uso de hint INDEX_COMBINE, filtro DTEXCLUSAO movido para dentro da subquery
     sql = f"""
@@ -114,7 +151,7 @@ def construir_query_produtos_classificados(criterio_classificacao: str, periodo_
                    I.CODPROD, COUNT(*) AS TOTAL_VENDIDO
             FROM PCPEDI I
             INNER JOIN PCPEDC C ON I.NUMPED = C.NUMPED
-            WHERE 1=1 {clausula_data_where}
+            WHERE {clausula_data}
             GROUP BY I.CODPROD
         ) VENDAS ON P.CODPROD = VENDAS.CODPROD
         WHERE P.DTEXCLUSAO IS NULL
@@ -128,15 +165,17 @@ def construir_query_produtos_classificados(criterio_classificacao: str, periodo_
 def construir_query_clientes_classificados(criterio_classificacao: str, periodo_tempo: str, limite: int) -> ResultadoQuery:
     logger.info(f"Construindo query de ranking de clientes por: {criterio_classificacao}")
 
+    if not periodo_tempo or periodo_tempo.strip().lower() == "sempre":
+        raise ValueError("Período de tempo é obrigatório para esta consulta. Use: hoje, este_mes, ultimo_mes, etc.")
+
     if criterio_classificacao != 'maior_valor_compras':
         raise ValueError(f"Critério de classificação de cliente inválido: {criterio_classificacao}")
 
     params = {"limite": limite}
-    clausula_data_where = ""
+    
+    # Validação rigorosa: período sempre obrigatório
     clausula_data, params_data = _construir_clausula_data_otimizada(periodo_tempo, 'DATA')
-    if clausula_data:
-        clausula_data_where = f"WHERE {clausula_data}"
-        params.update(params_data)
+    params.update(params_data)
 
     # Otimizada: Hint para usar índice na data e evitar sort desnecessário
     sql = f"""
@@ -147,7 +186,7 @@ def construir_query_clientes_classificados(criterio_classificacao: str, periodo_
             SELECT /*+ INDEX(PCPEDC IDX_PCPEDC_DATA) */
                    CODCLI, SUM(VLTOTAL) AS VALOR_TOTAL_GASTO
             FROM PCPEDC
-            {clausula_data_where}
+            WHERE {clausula_data}
             GROUP BY CODCLI
         ) GASTOS ON C.CODCLI = GASTOS.CODCLI
         ORDER BY GASTOS.VALOR_TOTAL_GASTO DESC
@@ -259,9 +298,10 @@ def construir_query_clientes_por_cidade(cidade: str, limite: int) -> ResultadoQu
     return sql, params
 
 def construir_query_clientes_recentes(periodo_tempo: str, limite: int) -> ResultadoQuery:
+    if not periodo_tempo or periodo_tempo.strip().lower() == "sempre":
+        raise ValueError("Período de tempo específico é obrigatório para esta consulta.")
+        
     clausula_data, params = _construir_clausula_data_otimizada(periodo_tempo, 'DTCADASTRO')
-    if not clausula_data:
-        raise ValueError("Período de tempo inválido para esta consulta.")
     params["limite"] = limite
     
     # Otimizada: Hint para usar índice na data de cadastro, filtro DTEXCLUSAO otimizado
@@ -279,11 +319,12 @@ def construir_query_clientes_recentes(periodo_tempo: str, limite: int) -> Result
 # --- Construtores de Query: PEDIDOS ---
 
 def construir_query_registros_vendas(codigo_cliente: int, periodo_tempo: str, limite: int) -> ResultadoQuery:
+    if not periodo_tempo or periodo_tempo.strip().lower() == "sempre":
+        raise ValueError("Período de tempo é obrigatório para esta consulta. Use: hoje, este_mes, ultimo_mes, etc.")
+    
     params = {"codigo_cliente": codigo_cliente, "limite": limite}
     clausula_data, params_data = _construir_clausula_data_otimizada(periodo_tempo, 'PC.DATA')
     params.update(params_data)
-    
-    clausula_where_data = f"AND {clausula_data}" if clausula_data else ""
     
     # Otimizada: Hint para usar índices compostos, JOIN otimizado
     sql = f"""
@@ -291,7 +332,7 @@ def construir_query_registros_vendas(codigo_cliente: int, periodo_tempo: str, li
                C.CODCLI, C.CLIENTE, PC.NUMPED, PC.VLTOTAL, PC.POSICAO, PC.DATA
         FROM PCPEDC PC 
         INNER JOIN PCCLIENT C ON C.CODCLI = PC.CODCLI
-        WHERE PC.CODCLI = :codigo_cliente {clausula_where_data}
+        WHERE PC.CODCLI = :codigo_cliente AND {clausula_data}
         ORDER BY PC.DATA DESC
         FETCH FIRST :limite ROWS ONLY
     """

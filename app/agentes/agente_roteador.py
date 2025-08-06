@@ -2,9 +2,9 @@
 """
 Módulo responsável por interpretar a intenção do usuário.
 
-Versão 2.2: O prompt foi fortalecido com regras mais explícitas sobre os
-valores permitidos para `criterio_classificacao`, visando reduzir a chance
-de o LLM extrair valores inválidos e causar erros de negócio.
+Versão 2.3: Implementada validação obrigatória de período de tempo para consultas
+que podem sobrecarregar a base de dados. O sistema agora sempre solicita
+esclarecimento quando o período não for especificado para consultas sensíveis.
 """
 
 import logging
@@ -50,6 +50,13 @@ TipoIntencao = Literal[
     "desconhecido",
 ]
 
+# Definir quais intenções OBRIGATORIAMENTE precisam de período de tempo
+INTENCOES_QUE_PRECISAM_PERIODO = {
+    "buscar_produtos_classificados",
+    "buscar_clientes_classificados", 
+    "listar_registros_vendas"
+}
+
 class IntencaoConsulta(BaseModel):
     """
     Representa a intenção e as entidades extraídas da pergunta do usuário.
@@ -67,11 +74,25 @@ class IntencaoConsulta(BaseModel):
 # Parser JSON que utiliza o modelo Pydantic.
 parser_json = JsonOutputParser(pydantic_object=IntencaoConsulta)
 
-# Template do prompt massivamente expandido com novas regras e exemplos.
+# Template do prompt expandido com regras rígidas sobre períodos de tempo.
 template_prompt = """
 Você é um especialista em análise de linguagem natural para um sistema de vendas da Comercial Esperança. Sua função é interpretar a pergunta do usuário e extrair a intenção e as entidades relevantes em um formato JSON. Responda APENAS com o JSON.
 
 {instrucoes_formato}
+
+--- REGRAS CRÍTICAS SOBRE PERÍODO DE TEMPO ---
+**ATENÇÃO**: Para evitar sobrecarga no banco de dados, certas consultas OBRIGATORIAMENTE precisam de um período específico:
+
+**CONSULTAS QUE EXIGEM PERÍODO OBRIGATÓRIO:**
+- `buscar_produtos_classificados` (rankings de produtos)
+- `buscar_clientes_classificados` (rankings de clientes)  
+- `listar_registros_vendas` (histórico de vendas)
+
+**PERÍODOS VÁLIDOS:**
+- 'hoje', 'este_mes', 'ultimo_mes', 'esta_semana', 'mes_passado'
+- Se o usuário não especificar período para essas consultas, use OBRIGATORIAMENTE `necessita_esclarecimento`
+
+**REGRA DE OURO**: NUNCA extraia `periodo_tempo` como 'sempre' ou deixe vazio para as intenções listadas acima.
 
 --- REGRAS DE EXTRAÇÃO ---
 1.  **Intenções de Cliente**:
@@ -81,48 +102,51 @@ Você é um especialista em análise de linguagem natural para um sistema de ven
     - `buscar_endereco_cliente`: Para endereço de entrega. Requer `nome_cliente` ou `codigo_cliente`.
     - `listar_clientes_por_cidade`: Para listar clientes de uma cidade específica. Requer `cidade`.
     - `listar_clientes_recentes`: Para clientes cadastrados recentemente. Requer `periodo_tempo`.
-    - `buscar_clientes_classificados`: Para rankings de clientes (quem mais comprou, etc.). Requer `criterio_classificacao`. O único valor válido para criterio_classificacao é 'maior_valor_compras'.
+    - `buscar_clientes_classificados`: **REQUER PERÍODO OBRIGATÓRIO**. Para rankings de clientes. Requer `criterio_classificacao` (só aceita 'maior_valor_compras') E `periodo_tempo` válido.
 
 2.  **Intenções de Produto**:
-    - `buscar_produtos_classificados`: Para rankings de produtos. Requer `criterio_classificacao`. Os valores válidos para criterio_classificacao são 'mais_vendidos' e 'menos_vendidos'.
-    - `buscar_detalhes_produto`: Para informações gerais de um produto (peso, marca, fornecedor). Requer `nome_produto` ou `codigo_produto`.
+    - `buscar_produtos_classificados`: **REQUER PERÍODO OBRIGATÓRIO**. Para rankings de produtos. Requer `criterio_classificacao` ('mais_vendidos' ou 'menos_vendidos') E `periodo_tempo` válido.
+    - `buscar_detalhes_produto`: Para informações gerais de um produto. Requer `nome_produto` ou `codigo_produto`.
     - `listar_produtos_por_marca`: Para listar produtos de uma marca. Requer `marca`.
     - `listar_produtos_descontinuados`: Para produtos com data de exclusão.
 
 3.  **Intenções de Pedido**:
-    - `listar_registros_vendas`: Para listar todos os pedidos de um cliente. Requer `nome_cliente` ou `codigo_cliente`.
+    - `listar_registros_vendas`: **REQUER PERÍODO OBRIGATÓRIO**. Para listar pedidos de um cliente. Requer `nome_cliente` ou `codigo_cliente` E `periodo_tempo` válido.
     - `obter_itens_pedido`: Para ver os itens de um pedido. Requer `id_pedido`.
-    - `verificar_posicao_pedido`: Para saber o status (Liberado, Bloqueado, etc.) de um pedido. Requer `id_pedido`.
+    - `verificar_posicao_pedido`: Para saber o status de um pedido. Requer `id_pedido`.
     - `consultar_valor_pedido`: Para o valor total de um pedido. Requer `id_pedido`.
     - `consultar_data_entrega_pedido`: Para a data de entrega prevista. Requer `id_pedido`.
     - `listar_pedidos_por_posicao`: Para listar pedidos com um status específico. Requer `posicao`.
 
 4.  **Regras Gerais**:
-    - **necessita_esclarecimento**: Se a intenção for clara, mas faltar uma entidade OBRIGATÓRIA, use esta intenção e formule uma pergunta em `mensagem_esclarecimento`.
+    - **necessita_esclarecimento**: Use quando a intenção for clara, mas faltar uma entidade OBRIGATÓRIA (incluindo período quando necessário).
     - **desconhecido**: Se não entender o pedido.
-    - **Padrões**: `limite` padrão é 10. `periodo_tempo` padrão é 'sempre'.
+    - **Padrões**: `limite` padrão é 10.
 
---- EXEMPLOS ---
+--- EXEMPLOS COM VALIDAÇÃO DE PERÍODO ---
+- Texto: "quais os 5 produtos mais vendidos?"
+  JSON: {{"intencao": "necessita_esclarecimento", "entidades": {{}}, "mensagem_esclarecimento": "Para consultar os produtos mais vendidos, preciso saber o período. Você quer ver os dados de hoje, este mês, último mês ou outro período específico?"}}
+
+- Texto: "quais os produtos mais vendidos este mês?"
+  JSON: {{"intencao": "buscar_produtos_classificados", "entidades": {{"criterio_classificacao": "mais_vendidos", "periodo_tempo": "este_mes", "limite": 10}}}}
+
+- Texto: "top 5 clientes que mais gastaram"
+  JSON: {{"intencao": "necessita_esclarecimento", "entidades": {{}}, "mensagem_esclarecimento": "Para consultar os clientes que mais gastaram, preciso saber o período. Você quer ver os dados de hoje, este mês, último mês ou outro período específico?"}}
+
+- Texto: "clientes que mais compraram no último mês"
+  JSON: {{"intencao": "buscar_clientes_classificados", "entidades": {{"criterio_classificacao": "maior_valor_compras", "periodo_tempo": "ultimo_mes", "limite": 10}}}}
+
+- Texto: "pedidos do cliente João"
+  JSON: {{"intencao": "necessita_esclarecimento", "entidades": {{}}, "mensagem_esclarecimento": "Para consultar os pedidos do cliente João, preciso saber o período. Você quer ver os pedidos de hoje, este mês, último mês ou outro período específico?"}}
+
+- Texto: "pedidos do cliente João este mês"
+  JSON: {{"intencao": "listar_registros_vendas", "entidades": {{"nome_cliente": "João", "periodo_tempo": "este_mes"}}}}
+
 - Texto: "qual o limite de crédito do cliente 123?"
   JSON: {{"intencao": "consultar_limite_credito", "entidades": {{"codigo_cliente": 123}}}}
 
-- Texto: "o cliente Comercial Esperança está ativo?"
-  JSON: {{"intencao": "verificar_status_cliente", "entidades": {{"nome_cliente": "Comercial Esperança"}}}}
-
-- Texto: "qual o cliente que mais comprou no último mês?"
-  JSON: {{"intencao": "buscar_clientes_classificados", "entidades": {{"criterio_classificacao": "maior_valor_compras", "periodo_tempo": "ultimo_mes", "limite": 1}}}}
-
-- Texto: "top 5 clientes que mais gastaram"
-  JSON: {{"intencao": "buscar_clientes_classificados", "entidades": {{"criterio_classificacao": "maior_valor_compras", "limite": 5}}}}
-
-- Texto: "quais os 5 produtos mais vendidos?"
-  JSON: {{"intencao": "buscar_produtos_classificados", "entidades": {{"criterio_classificacao": "mais_vendidos", "limite": 5}}}}
-
 - Texto: "qual a posição do pedido 98765?"
   JSON: {{"intencao": "verificar_posicao_pedido", "entidades": {{"id_pedido": 98765}}}}
-
-- Texto: "quero ver os pedidos"
-  JSON: {{"intencao": "necessita_esclarecimento", "entidades": {{}}, "mensagem_esclarecimento": "De qual cliente você gostaria de ver os pedidos? Por favor, informe o nome ou código."}}
 ---
 
 Analise o texto do usuário:
@@ -137,6 +161,7 @@ prompt = ChatPromptTemplate.from_template(
 async def obter_intencao(llm: ChatOllama, entrada_usuario: str) -> IntencaoConsulta:
     """
     Processa a entrada do usuário para extrair a intenção e as entidades.
+    Implementa validação adicional para garantir que períodos obrigatórios sejam solicitados.
     """
     logger.info("Iniciando roteamento de intenção do usuário.")
     cadeia_processamento = prompt | llm | parser_json
@@ -145,7 +170,34 @@ async def obter_intencao(llm: ChatOllama, entrada_usuario: str) -> IntencaoConsu
         logger.debug(f"Enviando para o LLM para extração: '{entrada_usuario}'")
         resultado_dict = await cadeia_processamento.ainvoke({"entrada_usuario": entrada_usuario})
         logger.info(f"Dicionário extraído com sucesso: {resultado_dict}")
-        return IntencaoConsulta(**(resultado_dict or {}))
+        
+        intencao_obj = IntencaoConsulta(**(resultado_dict or {}))
+        
+        # Validação adicional: verificar se intenções que precisam de período têm período válido
+        if intencao_obj.intencao in INTENCOES_QUE_PRECISAM_PERIODO:
+            periodo = intencao_obj.entidades.get("periodo_tempo")
+            
+            # Se não há período ou é "sempre", forçar esclarecimento
+            if not periodo or periodo == "sempre":
+                logger.warning(f"Período obrigatório não fornecido para intenção: {intencao_obj.intencao}")
+                
+                mensagens_esclarecimento = {
+                    "buscar_produtos_classificados": "Para consultar os produtos mais vendidos, preciso saber o período. Você quer ver os dados de hoje, este mês, último mês ou outro período específico?",
+                    "buscar_clientes_classificados": "Para consultar os clientes que mais gastaram, preciso saber o período. Você quer ver os dados de hoje, este mês, último mês ou outro período específico?",
+                    "listar_registros_vendas": "Para consultar o histórico de vendas, preciso saber o período. Você quer ver os dados de hoje, este mês, último mês ou outro período específico?"
+                }
+                
+                return IntencaoConsulta(
+                    intencao="necessita_esclarecimento",
+                    entidades={},
+                    mensagem_esclarecimento=mensagens_esclarecimento.get(
+                        intencao_obj.intencao, 
+                        "Para esta consulta, preciso saber o período de tempo. Você pode especificar: hoje, este mês, último mês ou outro período?"
+                    )
+                )
+        
+        return intencao_obj
+        
     except Exception as e:
         logger.error(f"Erro ao extrair intenção com o parser JSON: {e}", exc_info=True)
         return IntencaoConsulta(intencao="desconhecido")

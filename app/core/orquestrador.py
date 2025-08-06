@@ -2,8 +2,9 @@
 """
 Módulo orquestrador principal.
 
-Versão 2.3: Corrigido TypeError que ocorria ao chamar uma função síncrona
-com await no manipulador `_manipular_clientes_classificados`.
+Versão 2.4: Removidos defaults de "sempre" para período de tempo em consultas sensíveis.
+Agora o sistema é mais rigoroso e sempre exigirá período específico para evitar
+sobrecarga na base de dados.
 """
 
 import logging
@@ -49,17 +50,26 @@ async def _manipular_produtos_classificados(entidades: Dict[str, Any]) -> Result
     criterio = entidades.get("criterio_classificacao")
     if not criterio:
         raise ValueError("Critério de classificação não especificado (ex: mais vendidos).")
+    
+    periodo = entidades.get("periodo_tempo")
+    if not periodo:
+        raise ValueError("Período de tempo é obrigatório para esta consulta.")
+    
     return ferramentas_sql.construir_query_produtos_classificados(
         criterio_classificacao=criterio,
-        periodo_tempo=entidades.get("periodo_tempo", "sempre"),
+        periodo_tempo=periodo,
         limite=entidades.get("limite", 10)
     )
 
 async def _manipular_registros_vendas(entidades: Dict[str, Any]) -> ResultadoQuery:
     codigo_cliente = await _resolver_cliente(entidades)
+    periodo = entidades.get("periodo_tempo")
+    if not periodo:
+        raise ValueError("Período de tempo é obrigatório para esta consulta.")
+    
     return ferramentas_sql.construir_query_registros_vendas(
         codigo_cliente=codigo_cliente,
-        periodo_tempo=entidades.get("periodo_tempo", "sempre"),
+        periodo_tempo=periodo,
         limite=entidades.get("limite", 50)
     )
 
@@ -100,7 +110,7 @@ async def _manipular_clientes_por_cidade(entidades: Dict[str, Any]) -> Resultado
 async def _manipular_clientes_recentes(entidades: Dict[str, Any]) -> ResultadoQuery:
     periodo = entidades.get("periodo_tempo")
     if not periodo or periodo == "sempre":
-        raise ValueError("Por favor, especifique um período de tempo (ex: 'este mês', 'hoje').")
+        raise ValueError("Por favor, especifique um período de tempo específico (ex: 'este mês', 'hoje').")
     return ferramentas_sql.construir_query_clientes_recentes(periodo, entidades.get("limite", 20))
 
 async def _manipular_produtos_por_marca(entidades: Dict[str, Any]) -> ResultadoQuery:
@@ -141,12 +151,13 @@ async def _manipular_clientes_classificados(entidades: Dict[str, Any]) -> Result
     if not criterio:
         raise ValueError("Critério de classificação para clientes não especificado.")
     
-    # CORREÇÃO: Removido o 'await' pois a função chamada é síncrona.
-    # A função manipuladora precisa ser 'async' para corresponder à assinatura esperada,
-    # mas a chamada interna não deve ser aguardada se não for uma corrotina.
+    periodo = entidades.get("periodo_tempo")
+    if not periodo:
+        raise ValueError("Período de tempo é obrigatório para esta consulta.")
+    
     return ferramentas_sql.construir_query_clientes_classificados(
         criterio_classificacao=criterio,
-        periodo_tempo=entidades.get("periodo_tempo", "sempre"),
+        periodo_tempo=periodo,
         limite=entidades.get("limite", 10)
     )
 

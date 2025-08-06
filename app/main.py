@@ -9,6 +9,7 @@ define os endpoints da API.
 
 import logging
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -19,6 +20,8 @@ from dotenv import load_dotenv
 from helpers_compartilhados.helpers import configurar_logging
 from langchain_community.chat_models.ollama import ChatOllama
 from app.core.orquestrador import gerenciar_consulta_usuario
+from app.core.processador_whatsapp import processador_whatsapp
+from app.core.cliente_waha import cliente_waha
 
 # --- Configuração Inicial ---
 load_dotenv()
@@ -130,4 +133,65 @@ async def endpoint_chat(
         logger.error(f"Erro crítico no endpoint /chat para o usuário '{mensagem.id_usuario}': {e}", exc_info=True)
         # Em um ambiente de produção, o detalhe do erro não deveria ser exposto.
         raise HTTPException(status_code=500, detail="Ocorreu um erro interno no servidor ao processar sua solicitação.")
+
+
+@app.post("/webhook/whatsapp", summary="Webhook do WhatsApp", tags=["WhatsApp"])
+async def webhook_whatsapp(
+    request: Request,
+    llm: Annotated[ChatOllama, Depends(obter_llm)]
+):
+    """
+    Recebe webhooks do WAHA para processar mensagens do WhatsApp.
+    """
+    try:
+        webhook_data = await request.json()
+        logger.info(f"Webhook recebido: {webhook_data}")
+        
+        # Processar mensagem em background para resposta rápida
+        asyncio.create_task(
+            processador_whatsapp.processar_mensagem(llm, webhook_data)
+        )
+        
+        return {"status": "received"}
+        
+    except Exception as e:
+        logger.error(f"Erro no webhook do WhatsApp: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao processar webhook")
+
+
+@app.get("/whatsapp/status", summary="Status do WhatsApp", tags=["WhatsApp"])
+async def status_whatsapp():
+    """
+    Verifica o status da conexão com WhatsApp.
+    """
+    try:
+        sessao_ativa = await cliente_waha.verificar_sessao()
+        return {
+            "whatsapp_conectado": sessao_ativa,
+            "session_name": cliente_waha.session_name,
+            "status": "conectado" if sessao_ativa else "desconectado"
+        }
+    except Exception as e:
+        logger.error(f"Erro ao verificar status do WhatsApp: {e}")
+        return {
+            "whatsapp_conectado": False,
+            "status": "erro",
+            "mensagem": str(e)
+        }
+
+
+@app.post("/whatsapp/iniciar", summary="Iniciar Sessão WhatsApp", tags=["WhatsApp"])
+async def iniciar_whatsapp():
+    """
+    Inicia uma nova sessão do WhatsApp.
+    """
+    try:
+        sucesso = await cliente_waha.iniciar_sessao()
+        if sucesso:
+            return {"status": "success", "mensagem": "Sessão iniciada com sucesso"}
+        else:
+            return {"status": "error", "mensagem": "Falha ao iniciar sessão"}
+    except Exception as e:
+        logger.error(f"Erro ao iniciar sessão do WhatsApp: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao iniciar sessão")
 

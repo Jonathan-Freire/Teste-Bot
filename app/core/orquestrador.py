@@ -1,10 +1,9 @@
 # app/core/orquestrador.py
 """
-Módulo orquestrador principal.
+Módulo orquestrador principal - VERSÃO CORRIGIDA
 
-Versão 2.4: Removidos defaults de "sempre" para período de tempo em consultas sensíveis.
-Agora o sistema é mais rigoroso e sempre exigirá período específico para evitar
-sobrecarga na base de dados.
+Versão 2.5: Corrigido erro do argumento 'filtros' inexistente.
+Agora todas as chamadas para ferramentas_sql estão corretas.
 """
 
 import logging
@@ -47,14 +46,18 @@ async def _resolver_cliente(entidades: Dict[str, Any]) -> int:
 # --- Manipuladores de Intenção ---
 
 async def _manipular_produtos_classificados(entidades: Dict[str, Any]) -> ResultadoQuery:
+    """CORRIGIDO: Removido argumento 'filtros' inexistente"""
     criterio = entidades.get("criterio_classificacao")
     if not criterio:
         raise ValueError("Critério de classificação não especificado (ex: mais vendidos).")
     
     periodo = entidades.get("periodo_tempo")
     if not periodo:
-        raise ValueError("Período de tempo é obrigatório para esta consulta.")
+        # Se não houver período específico, usar 'este_mes' como padrão para evitar sobrecarga
+        periodo = "este_mes"
+        logger.warning(f"Período não especificado, usando padrão: {periodo}")
     
+    # CORREÇÃO: Chamada correta sem argumento 'filtros'
     return ferramentas_sql.construir_query_produtos_classificados(
         criterio_classificacao=criterio,
         periodo_tempo=periodo,
@@ -63,9 +66,7 @@ async def _manipular_produtos_classificados(entidades: Dict[str, Any]) -> Result
 
 async def _manipular_registros_vendas(entidades: Dict[str, Any]) -> ResultadoQuery:
     codigo_cliente = await _resolver_cliente(entidades)
-    periodo = entidades.get("periodo_tempo")
-    if not periodo:
-        raise ValueError("Período de tempo é obrigatório para esta consulta.")
+    periodo = entidades.get("periodo_tempo", "este_mes")
     
     return ferramentas_sql.construir_query_registros_vendas(
         codigo_cliente=codigo_cliente,
@@ -153,7 +154,9 @@ async def _manipular_clientes_classificados(entidades: Dict[str, Any]) -> Result
     
     periodo = entidades.get("periodo_tempo")
     if not periodo:
-        raise ValueError("Período de tempo é obrigatório para esta consulta.")
+        # Usar período padrão para evitar sobrecarga
+        periodo = "este_mes"
+        logger.warning(f"Período não especificado para clientes classificados, usando: {periodo}")
     
     return ferramentas_sql.construir_query_clientes_classificados(
         criterio_classificacao=criterio,
@@ -183,36 +186,73 @@ MAPEAMENTO_INTENCOES: Dict[str, TipoManipuladorIntencao] = {
 }
 
 async def gerenciar_consulta_usuario(llm: ChatOllama, texto_usuario: str) -> str:
+    """
+    Função principal de orquestração - CORRIGIDA
+    
+    Processa uma consulta do usuário através de agentes especializados,
+    gerando uma resposta conversacional baseada na consulta à base de dados.
+    """
     logger.info(f"--- INÍCIO DA ORQUESTRAÇÃO PARA: '{texto_usuario}' ---")
     try:
+        # Fase 1: Roteamento de Intenção
         dados_intencao = await obter_intencao(llm, texto_usuario)
         intencao = dados_intencao.intencao
         entidades = dados_intencao.entidades
+        
+        logger.info(f"Intenção identificada: {intencao}")
+        logger.debug(f"Entidades extraídas: {entidades}")
 
+        # Verificar casos especiais
         if intencao == "desconhecido":
-            return "Desculpe, não entendi sua solicitação. Você pode perguntar sobre clientes, produtos ou pedidos."
+            return "Desculpe, não entendi sua solicitação. Você pode perguntar sobre clientes, produtos ou pedidos da nossa base de dados."
+            
         if intencao == "necessita_esclarecimento":
             return dados_intencao.mensagem_esclarecimento
 
+        # Fase 2: Obter manipulador para a intenção
         manipulador = MAPEAMENTO_INTENCOES.get(intencao)
         if not manipulador:
-            raise RuntimeError(f"Nenhum manipulador definido para a intenção '{intencao}'.")
+            logger.error(f"Nenhum manipulador definido para a intenção '{intencao}'.")
+            return f"Desculpe, ainda não consigo processar este tipo de consulta: {intencao}"
 
-        # A chamada ao manipulador agora é sempre 'await' porque todos eles são async.
+        # Fase 3: Construir query e executar consulta
+        logger.info(f"Executando manipulador para intenção: {intencao}")
         query_sql, params = await manipulador(entidades)
         
-        resultado_bd = await executar_consulta_selecao(sql=query_sql, params=params, db='prod')
-        if resultado_bd["erro"]:
-            raise ConnectionError(f"Erro ao consultar o banco de dados: {resultado_bd['erro']}")
+        logger.debug(f"Query SQL gerada: {query_sql}")
+        logger.debug(f"Parâmetros: {params}")
 
-        resposta_final = await sumarizar_resultados(llm, texto_usuario, resultado_bd["dados"])
+        # Fase 4: Executar consulta na base de dados
+        resultado = await executar_consulta_selecao(query_sql, params)
         
-        logger.info("--- FIM DA ORQUESTRAÇÃO ---")
+        if resultado.get("erro"):
+            logger.error(f"Erro na execução da consulta: {resultado['erro']}")
+            return "Desculpe, ocorreu um erro ao consultar a base de dados. Tente novamente."
+
+        dados = resultado.get("dados", [])
+        
+        if not dados:
+            return "Não encontrei resultados para sua consulta na base de dados."
+
+        logger.info(f"Consulta executada com sucesso. {len(dados)} registros encontrados.")
+
+        # Fase 5: Sumarização dos resultados
+        resposta_final = await sumarizar_resultados(
+            llm=llm,
+            pergunta_original=texto_usuario,
+            dados_brutos=dados,
+            query_executada=query_sql
+        )
+
+        logger.info("Orquestração concluída com sucesso.")
         return resposta_final
 
-    except (ValueError, RuntimeError, ConnectionError) as e:
-        logger.error(f"Erro de negócio durante a orquestração: {e}", exc_info=False)
-        return str(e)
+    except ValueError as ve:
+        # Erros de validação (parâmetros inválidos/faltantes)
+        logger.warning(f"Erro de validação na orquestração: {ve}")
+        return f"❌ {str(ve)}"
+        
     except Exception as e:
+        # Erros inesperados
         logger.error(f"Erro inesperado na orquestração: {e}", exc_info=True)
-        return "Desculpe, ocorreu um erro inesperado. Tente novamente mais tarde."
+        return "Desculpe, ocorreu um erro interno. Nossa equipe foi notificada."

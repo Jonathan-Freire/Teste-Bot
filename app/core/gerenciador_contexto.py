@@ -157,11 +157,12 @@ class GerenciadorContexto:
         # Estatísticas globais
         self.total_sessoes_criadas = 0
         self.total_sessoes_limpas = 0
-        
-        # Iniciar task de limpeza automática
-        self._iniciar_limpeza_automatica()
-        
+
         logger.info(f"Gerenciador de contexto inicializado. Timeout: {timeout_minutos}min, Max mensagens: {max_mensagens}")
+
+    async def iniciar(self):
+        """Inicia rotinas assíncronas após a aplicação estar pronta."""
+        self._iniciar_limpeza_automatica()
     
     def _iniciar_limpeza_automatica(self):
         """

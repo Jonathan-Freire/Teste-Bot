@@ -14,6 +14,7 @@ from langchain_ollama import OllamaLLM
 from app.core.orquestrador import gerenciar_consulta_usuario
 from app.core.processador_whatsapp import processador_whatsapp
 from app.core.cliente_waha import cliente_waha
+from app.core.gerenciador_contexto import gerenciador_contexto
 
 # --- Configuração Inicial ---
 load_dotenv()
@@ -61,7 +62,9 @@ async def lifespan(app: FastAPI):
         validate_model_on_init=True
     )
     logger.info("Instância do LLM criada e pronta para uso.")
-    
+
+    await gerenciador_contexto.iniciar()
+
     yield  # A API fica operacional neste ponto
     
     logger.info("Encerrando a API e limpando recursos...")

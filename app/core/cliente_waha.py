@@ -12,8 +12,6 @@ import os
 import logging
 import requests
 import asyncio
-import aiofiles
-import tempfile
 import hashlib
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -433,33 +431,33 @@ class ClienteWaha:
         """
         payload = {
             "name": self.config.session_name,
+            "start": True,  # CORREÇÃO: Alterado de "true" para o booleano True
             "config": {
+                # ADICIONADO: Estruturas que faltavam no payload original
+                "metadata": {
+                    "user.id": "123",  # Idealmente, estes valores devem ser dinâmicos
+                    "user.email": "email@example.com"
+                },
+                "proxy": None,
+                "debug": False,
+                "noweb": {
+                    "store": {
+                        "enabled": True,
+                        "fullSync": False
+                    }
+                },
                 "webhooks": [
                     {
                         "url": webhook_url,
                         "events": [
                             "message",
-                            "session.status", 
-                            "message.reaction",
-                            "message.revoked"
+                            "session.status"
                         ],
                         "hmac": None,
-                        "retries": {
-                            "delaySeconds": 2,
-                            "attempts": 5
-                        },
-                        "customHeaders": [
-                            {
-                                "name": "User-Agent",
-                                "value": "Bot-WhatsApp-Webhook/3.0"
-                            }
-                        ]
+                        "retries": None,  # CORREÇÃO: Alterado de objeto para None
+                        "customHeaders": None  # CORREÇÃO: Alterado de lista para None
                     }
-                ],
-                # Configurações específicas do engine
-                "engine": "WEBJS",
-                "printQR": True,
-                "logLevel": "warn"
+                ]
             }
         }
         

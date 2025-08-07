@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 :: ========================================
 :: SCRIPT COMPLETO DE INICIALIZAÇÃO
 :: Bot WhatsApp com WAHA + Ngrok + API
@@ -92,9 +93,9 @@ if "%SKIP_WAHA%"=="false" (
     echo [4/6] Iniciando WAHA...
     
     :: Verificar se container já está rodando
-    docker ps | findstr "waha" >nul 2>&1
+    docker ps --filter "name=^waha-bot$" | findstr "waha-bot" >nul 2>&1
     if %errorlevel% equ 0 (
-        echo  WAHA já está rodando
+        echo  Container WAHA já está rodando.
     ) else (
         echo    Parando containers antigos do WAHA...
         docker stop waha-bot 2>nul
@@ -160,8 +161,6 @@ curl -s http://localhost:%API_PORT% >nul 2>&1
 if %errorlevel% equ 0 (
     echo  API já está rodando na porta %API_PORT%
 ) else (
-    echo    Instalando dependências...
-    pip install -r requirements.txt --quiet
     
     echo    Iniciando servidor FastAPI...
     start "Bot API" /min cmd /k "python -m uvicorn app.main:app --host 0.0.0.0 --port %API_PORT% --reload"

@@ -5,6 +5,8 @@ Monitor do Sistema Bot WhatsApp
 Este script monitora continuamente o status de todos os componentes
 e exibe informações úteis para debug e acompanhamento.
 
+Versão 2.1: Corrigidas importações e compatibilidade Python 3.10.11
+
 Execute: python monitor.py
 """
 
@@ -14,25 +16,69 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-import json
-import time
+from typing import Dict, Any, List
 
 # Adicionar diretório ao path
 sys.path.insert(0, str(Path(__file__).parent))
 
 class MonitorSistema:
+    """
+    Classe para monitorar continuamente o sistema bot WhatsApp.
+    
+    Esta classe verifica o status de todos os componentes do sistema:
+    - API FastAPI
+    - Serviço WAHA
+    - Ollama
+    - Ngrok
+    - WhatsApp
+    - Gerenciador de contexto
+    - Logs do sistema
+    
+    Attributes:
+        api_url: URL da API FastAPI local.
+        waha_url: URL do serviço WAHA local.
+        ollama_url: URL do serviço Ollama local.
+        ngrok_url: URL da API do ngrok local.
+    """
+    
     def __init__(self):
+        """
+        Inicializa o monitor com URLs padrão dos serviços.
+        
+        Examples:
+            >>> monitor = MonitorSistema()
+            >>> print(monitor.api_url)
+            "http://localhost:8000"
+        """
         self.api_url = "http://localhost:8000"
         self.waha_url = "http://localhost:3000"
         self.ollama_url = "http://localhost:11434"
         self.ngrok_url = "http://localhost:4040"
         
     def limpar_tela(self):
-        """Limpa a tela do terminal"""
+        """
+        Limpa a tela do terminal.
+        """
         os.system('cls' if os.name == 'nt' else 'clear')
     
-    def verificar_servico(self, nome: str, url: str, endpoint: str = "") -> dict:
-        """Verifica status de um serviço"""
+    def verificar_servico(self, nome: str, url: str, endpoint: str = "") -> Dict[str, str]:
+        """
+        Verifica status de um serviço HTTP.
+        
+        Args:
+            nome: Nome amigável do serviço.
+            url: URL base do serviço.
+            endpoint: Endpoint específico para testar (opcional).
+            
+        Returns:
+            Dicionário com nome, status e detalhes do serviço.
+            
+        Examples:
+            >>> monitor = MonitorSistema()
+            >>> status = monitor.verificar_servico("API", "http://localhost:8000", "/")
+            >>> print(status["status"])
+            "✅ Online" ou "❌ Offline"
+        """
         try:
             response = requests.get(f"{url}{endpoint}", timeout=2)
             return {
@@ -40,15 +86,20 @@ class MonitorSistema:
                 "status": "✅ Online",
                 "detalhes": f"HTTP {response.status_code}"
             }
-        except:
+        except requests.exceptions.RequestException:
             return {
                 "nome": nome,
                 "status": "❌ Offline",
                 "detalhes": "Não responde"
             }
     
-    async def obter_status_whatsapp(self) -> dict:
-        """Obtém status detalhado do WhatsApp"""
+    async def obter_status_whatsapp(self) -> Dict[str, Any]:
+        """
+        Obtém status detalhado do WhatsApp via API.
+        
+        Returns:
+            Dicionário com informações sobre a conexão WhatsApp.
+        """
         try:
             response = requests.get(f"{self.api_url}/whatsapp/status", timeout=2)
             data = response.json()
@@ -57,15 +108,20 @@ class MonitorSistema:
                 "sessao": data.get("session_name", "default"),
                 "status": data.get("status", "desconhecido")
             }
-        except:
+        except requests.exceptions.RequestException:
             return {
                 "conectado": False,
                 "sessao": "N/A",
                 "status": "erro"
             }
     
-    async def obter_estatisticas_contexto(self) -> dict:
-        """Obtém estatísticas do gerenciador de contexto"""
+    async def obter_estatisticas_contexto(self) -> Dict[str, Any]:
+        """
+        Obtém estatísticas do gerenciador de contexto.
+        
+        Returns:
+            Dicionário com estatísticas das sessões de conversa.
+        """
         try:
             from app.core.gerenciador_contexto import gerenciador_contexto
             stats = gerenciador_contexto.obter_estatisticas_globais()
@@ -75,15 +131,23 @@ class MonitorSistema:
                 "total_criadas": stats.get("total_sessoes_criadas", 0),
                 "usuarios": sessoes_ativas[:5] if sessoes_ativas else []
             }
-        except:
+        except (ImportError, AttributeError):
             return {
                 "sessoes_ativas": 0,
                 "total_criadas": 0,
                 "usuarios": []
             }
     
-    def obter_ultimas_linhas_log(self, n: int = 5) -> list:
-        """Obtém as últimas n linhas do log"""
+    def obter_ultimas_linhas_log(self, n: int = 5) -> List[str]:
+        """
+        Obtém as últimas n linhas do log.
+        
+        Args:
+            n: Número de linhas a serem retornadas.
+            
+        Returns:
+            Lista com as últimas linhas do log.
+        """
         try:
             log_file = Path("logs/log_bot.log")
             if log_file.exists():
@@ -94,8 +158,13 @@ class MonitorSistema:
         except Exception as e:
             return [f"Erro ao ler log: {e}"]
     
-    def obter_info_ngrok(self) -> dict:
-        """Obtém informações do túnel ngrok"""
+    def obter_info_ngrok(self) -> Dict[str, Any]:
+        """
+        Obtém informações do túnel ngrok.
+        
+        Returns:
+            Dicionário com informações sobre o túnel ngrok.
+        """
         try:
             response = requests.get(f"{self.ngrok_url}/api/tunnels", timeout=2)
             tunnels = response.json().get("tunnels", [])
@@ -104,14 +173,19 @@ class MonitorSistema:
                     return {
                         "url": tunnel.get("public_url", "N/A"),
                         "status": "✅ Ativo",
-                        "conexoes": tunnel.get("metrics", {}).get("conns", 0)
+                        "conexoes": tunnel.get("metrics", {}).get("conns", {}).get("count", 0)
                     }
             return {"url": "N/A", "status": "❌ Sem túnel", "conexoes": 0}
-        except:
+        except requests.exceptions.RequestException:
             return {"url": "N/A", "status": "❌ Offline", "conexoes": 0}
     
     async def exibir_dashboard(self):
-        """Exibe o dashboard de monitoramento"""
+        """
+        Exibe o dashboard de monitoramento em tempo real.
+        
+        Este método executa um loop infinito que atualiza as informações
+        do sistema a cada 5 segundos, permitindo comandos do usuário.
+        """
         while True:
             try:
                 self.limpar_tela()
@@ -159,7 +233,10 @@ class MonitorSistema:
                 print(f"Sessões ativas: {ctx_stats['sessoes_ativas']}")
                 print(f"Total criadas: {ctx_stats['total_criadas']}")
                 if ctx_stats['usuarios']:
-                    print(f"Usuários ativos: {', '.join(ctx_stats['usuarios'][:3])}")
+                    usuarios_str = ', '.join(ctx_stats['usuarios'][:3])
+                    if len(ctx_stats['usuarios']) > 3:
+                        usuarios_str += f" (+{len(ctx_stats['usuarios']) - 3} mais)"
+                    print(f"Usuários ativos: {usuarios_str}")
                 
                 # Últimas linhas do log
                 print("\n📝 ÚLTIMAS ATIVIDADES DO LOG:")
@@ -205,7 +282,9 @@ class MonitorSistema:
                 await asyncio.sleep(5)
     
     async def limpar_logs(self):
-        """Limpa o arquivo de log"""
+        """
+        Limpa o arquivo de log criando um backup.
+        """
         try:
             log_file = Path("logs/log_bot.log")
             if log_file.exists():
@@ -223,7 +302,9 @@ class MonitorSistema:
         await asyncio.sleep(2)
     
     async def reiniciar_whatsapp(self):
-        """Reinicia a sessão do WhatsApp"""
+        """
+        Reinicia a sessão do WhatsApp.
+        """
         try:
             print("\n🔄 Reiniciando WhatsApp...")
             from app.core.cliente_waha import cliente_waha
@@ -251,7 +332,9 @@ class MonitorSistema:
         await asyncio.sleep(3)
     
     async def testar_sistema(self):
-        """Executa teste rápido do sistema"""
+        """
+        Executa teste rápido do sistema.
+        """
         try:
             print("\n🧪 Testando sistema...")
             
@@ -280,7 +363,15 @@ class MonitorSistema:
         await asyncio.sleep(3)
 
 async def main():
-    """Função principal do monitor"""
+    """
+    Função principal do monitor.
+    
+    Cria uma instância do monitor e inicia o dashboard interativo.
+    
+    Examples:
+        >>> await main()
+        # Inicia o monitor interativo
+    """
     monitor = MonitorSistema()
     await monitor.exibir_dashboard()
 

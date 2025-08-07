@@ -1,3 +1,13 @@
+# helpers_compartilhados/helpers.py
+"""
+Módulo de funções auxiliares compartilhadas.
+
+Este módulo contém funções utilitárias que são utilizadas em todo o projeto,
+incluindo configuração de logging e adição de módulos ao path do sistema.
+
+Versão 2.1: Melhoradas docstrings e compatibilidade Python 3.10.11
+"""
+
 import sys
 import logging
 from pathlib import Path
@@ -8,15 +18,26 @@ from esperanca_excecao_robos import ExcecaoRobo
 logger = logging.getLogger(__name__)
 
 
-def adicionar_modulo(nome_pasta_modulo: str):
+def adicionar_modulo(nome_pasta_modulo: str) -> None:
     """
-    Adiciona os modulos dos robôs, que ficam armazenados na pasta `C:\Robos\modulos`
+    Adiciona os módulos dos robôs ao sys.path.
+    
+    Esta função procura pelos módulos armazenados na pasta `C:\Robos\modulos`
+    ou em caminhos alternativos e os adiciona ao path do Python para que
+    possam ser importados.
 
     Args:
-        nome_pasta_modulo (str): Nome da pasta onde os arquivos do modulo se encontram.
+        nome_pasta_modulo: Nome da pasta onde os arquivos do módulo se encontram.
         
     Raises:
         ExcecaoRobo: Se nenhum diretório válido for encontrado para os módulos.
+        
+    Examples:
+        >>> adicionar_modulo('conexaodb')
+        # Adiciona o módulo conexaodb ao sys.path
+        
+        >>> adicionar_modulo('modulo_inexistente')
+        # Raises: ExcecaoRobo("A pasta do módulo '...' não existe.")
     """
     try:
         logger.debug(f"Tentando adicionar o módulo '{nome_pasta_modulo}' ao sys.path.")
@@ -51,7 +72,8 @@ def adicionar_modulo(nome_pasta_modulo: str):
             type(e).__name__
         ) from e
         
-def configurar_logging(nome_arquivo_log: str, diretorio_log: Path = Path("logs")):
+
+def configurar_logging(nome_arquivo_log: str, diretorio_log: Path = Path("logs")) -> None:
     """
     Configura o logging para a aplicação e limpa logs antigos.
 
@@ -61,9 +83,15 @@ def configurar_logging(nome_arquivo_log: str, diretorio_log: Path = Path("logs")
     2. StreamHandler: Exibe os logs no console.
 
     Args:
-        nome_arquivo_log (str): O nome do arquivo de log (sem a extensão).
-        diretorio_log (Path, optional): O diretório onde os logs serão salvos. 
-                                        Padrão é 'logs'.
+        nome_arquivo_log: O nome do arquivo de log (sem a extensão).
+        diretorio_log: O diretório onde os logs serão salvos. Padrão é 'logs'.
+        
+    Examples:
+        >>> configurar_logging('meu_bot')
+        # Cria logs/meu_bot.log e configura logging
+        
+        >>> configurar_logging('sistema', Path('/var/log/meu_projeto'))
+        # Cria logs em diretório personalizado
     """
     # 1. Limpa os logs antigos antes de qualquer outra coisa
     _limpar_logs_antigos(diretorio_log)
@@ -99,13 +127,21 @@ def configurar_logging(nome_arquivo_log: str, diretorio_log: Path = Path("logs")
 
     logging.info(f"Logging configurado. Os logs serão salvos em: {caminho_arquivo_log}")
     
-def _limpar_logs_antigos(diretorio_log: Path, meses: int = 3):
+
+def _limpar_logs_antigos(diretorio_log: Path, meses: int = 3) -> None:
     """
     Verifica o diretório de logs e exclui arquivos mais antigos que o limite.
 
     Args:
-        diretorio_log (Path): O diretório onde os logs estão salvos.
-        meses (int): A idade máxima em meses que um arquivo de log pode ter.
+        diretorio_log: O diretório onde os logs estão salvos.
+        meses: A idade máxima em meses que um arquivo de log pode ter.
+        
+    Examples:
+        >>> _limpar_logs_antigos(Path("logs"))
+        # Remove logs com mais de 3 meses
+        
+        >>> _limpar_logs_antigos(Path("logs"), 6)
+        # Remove logs com mais de 6 meses
     """
     if not diretorio_log.exists():
         return # Se o diretório não existe, não há nada a fazer.
@@ -128,4 +164,4 @@ def _limpar_logs_antigos(diretorio_log: Path, meses: int = 3):
         except OSError as e:
             logging.error(f"Não foi possível excluir o arquivo de log '{arquivo_log.name}': {e}")
         except Exception as e:
-            logging.error(f"Ocorreu um erro inesperado ao processar o arquivo '{arquivo_log.name}': {e}")    
+            logging.error(f"Ocorreu um erro inesperado ao processar o arquivo '{arquivo_log.name}': {e}")

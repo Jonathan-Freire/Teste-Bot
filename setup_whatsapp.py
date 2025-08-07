@@ -5,6 +5,8 @@ Script de Configuração e Teste do Bot WhatsApp
 Este script guia você através de todo o processo de configuração
 do bot WhatsApp, desde a verificação dos requisitos até o teste final.
 
+Versão 2.1: Corrigidas importações do LangChain para compatibilidade Python 3.10.11
+
 Execute: python setup_whatsapp.py
 """
 
@@ -16,14 +18,14 @@ import time
 import requests
 import qrcode
 from pathlib import Path
-from typing import Optional, Dict, Any
-import json
+from typing import Optional
 
 # Adicionar o diretório raiz ao path
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Cores para o terminal
 class Cores:
+    """Classe para definir cores no terminal."""
     VERDE = '\033[92m'
     AMARELO = '\033[93m'
     VERMELHO = '\033[91m'
@@ -32,35 +34,86 @@ class Cores:
     NEGRITO = '\033[1m'
 
 def print_colorido(texto: str, cor: str = Cores.RESET):
-    """Imprime texto colorido no terminal"""
+    """
+    Imprime texto colorido no terminal.
+    
+    Args:
+        texto: Texto a ser impresso.
+        cor: Código de cor ANSI.
+    """
     print(f"{cor}{texto}{Cores.RESET}")
 
 def print_titulo(titulo: str):
-    """Imprime um título formatado"""
+    """
+    Imprime um título formatado.
+    
+    Args:
+        titulo: Texto do título.
+    """
     print("\n" + "=" * 60)
     print_colorido(f"  {titulo}", Cores.NEGRITO + Cores.AZUL)
     print("=" * 60)
 
 def print_sucesso(mensagem: str):
-    """Imprime mensagem de sucesso"""
+    """
+    Imprime mensagem de sucesso.
+    
+    Args:
+        mensagem: Mensagem a ser exibida.
+    """
     print_colorido(f"✅ {mensagem}", Cores.VERDE)
 
 def print_erro(mensagem: str):
-    """Imprime mensagem de erro"""
+    """
+    Imprime mensagem de erro.
+    
+    Args:
+        mensagem: Mensagem de erro a ser exibida.
+    """
     print_colorido(f"❌ {mensagem}", Cores.VERMELHO)
 
 def print_aviso(mensagem: str):
-    """Imprime mensagem de aviso"""
+    """
+    Imprime mensagem de aviso.
+    
+    Args:
+        mensagem: Mensagem de aviso a ser exibida.
+    """
     print_colorido(f"⚠️  {mensagem}", Cores.AMARELO)
 
 def print_info(mensagem: str):
-    """Imprime mensagem informativa"""
+    """
+    Imprime mensagem informativa.
+    
+    Args:
+        mensagem: Mensagem informativa a ser exibida.
+    """
     print_colorido(f"ℹ️  {mensagem}", Cores.AZUL)
 
 class ConfiguradorWhatsApp:
-    """Classe principal para configurar o sistema WhatsApp"""
+    """
+    Classe principal para configurar o sistema WhatsApp.
+    
+    Esta classe gerencia todo o processo de configuração do bot,
+    desde a verificação de requisitos até o teste final do sistema.
+    
+    Attributes:
+        ngrok_process: Processo do ngrok em execução.
+        uvicorn_process: Processo da API FastAPI em execução.
+        ngrok_url: URL pública gerada pelo ngrok.
+        waha_url: URL local do serviço WAHA.
+        api_port: Porta onde a API será executada.
+    """
     
     def __init__(self):
+        """
+        Inicializa o configurador com valores padrão.
+        
+        Examples:
+            >>> configurador = ConfiguradorWhatsApp()
+            >>> print(configurador.api_port)
+            8000
+        """
         self.ngrok_process = None
         self.uvicorn_process = None
         self.ngrok_url = None
@@ -68,7 +121,12 @@ class ConfiguradorWhatsApp:
         self.api_port = 8000
         
     async def verificar_requisitos(self) -> bool:
-        """Verifica se todos os requisitos estão instalados"""
+        """
+        Verifica se todos os requisitos estão instalados.
+        
+        Returns:
+            bool: True se todos os requisitos estão atendidos.
+        """
         print_titulo("VERIFICANDO REQUISITOS")
         
         requisitos_ok = True
@@ -83,14 +141,16 @@ class ConfiguradorWhatsApp:
         
         # Verificar pip packages
         packages_necessarios = [
-            "fastapi", "uvicorn", "langchain", "pydantic", 
-            "aiofiles", "requests", "qrcode"
+            "fastapi", "uvicorn", "langchain_core", "langchain_community", 
+            "pydantic", "aiofiles", "requests", "qrcode"
         ]
         
         print("\nVerificando pacotes Python...")
         for package in packages_necessarios:
             try:
-                __import__(package.replace("-", "_"))
+                # Correção: usar nome correto para importação
+                nome_import = package.replace("-", "_")
+                __import__(nome_import)
                 print_sucesso(f"{package} instalado")
             except ImportError:
                 print_erro(f"{package} não encontrado")
@@ -100,12 +160,12 @@ class ConfiguradorWhatsApp:
         # Verificar ngrok
         print("\nVerificando ngrok...")
         try:
-            result = subprocess.run(["ngrok", "version"], capture_output=True, text=True)
+            result = subprocess.run(["ngrok", "version"], capture_output=True, text=True, timeout=10)
             if result.returncode == 0:
                 print_sucesso(f"ngrok encontrado: {result.stdout.strip()}")
             else:
                 raise FileNotFoundError
-        except FileNotFoundError:
+        except (FileNotFoundError, subprocess.TimeoutExpired):
             print_erro("ngrok não encontrado")
             print_info("Baixe em: https://ngrok.com/download")
             print_info("Ou instale com: brew install ngrok (Mac) / snap install ngrok (Linux)")
@@ -126,7 +186,7 @@ class ConfiguradorWhatsApp:
                     print_info("Instale um modelo com: ollama pull llama3.1")
             else:
                 raise requests.exceptions.RequestException
-        except:
+        except requests.exceptions.RequestException:
             print_erro("Ollama não está rodando ou não está acessível")
             print_info("Inicie o Ollama com: ollama serve")
             requisitos_ok = False
@@ -139,7 +199,7 @@ class ConfiguradorWhatsApp:
                 print_sucesso("WAHA está rodando")
             else:
                 raise requests.exceptions.RequestException
-        except:
+        except requests.exceptions.RequestException:
             print_erro("WAHA não está rodando em http://localhost:3000")
             print_info("Inicie o WAHA com Docker:")
             print_info("docker run -it -p 3000:3000 devlikeapro/waha")
@@ -156,7 +216,14 @@ class ConfiguradorWhatsApp:
         return requisitos_ok
     
     def criar_env_padrao(self):
-        """Cria arquivo .env com configurações padrão"""
+        """
+        Cria arquivo .env com configurações padrão.
+        
+        Examples:
+            >>> configurador = ConfiguradorWhatsApp()
+            >>> configurador.criar_env_padrao()
+            # Cria arquivo .env com configurações
+        """
         env_content = """# Configurações do Bot WhatsApp
 OLLAMA_BASE_URL=http://localhost:11434
 LLM_MODEL=llama3.1
@@ -176,7 +243,12 @@ LOG_DIR=logs
         print_info("Arquivo .env criado com configurações padrão")
     
     async def iniciar_ngrok(self) -> Optional[str]:
-        """Inicia o ngrok e retorna a URL pública"""
+        """
+        Inicia o ngrok e retorna a URL pública.
+        
+        Returns:
+            Optional[str]: URL pública do ngrok ou None se falhar.
+        """
         print_titulo("INICIANDO NGROK")
         
         try:
@@ -214,7 +286,13 @@ LOG_DIR=logs
             return None
     
     def atualizar_env(self, chave: str, valor: str):
-        """Atualiza uma chave no arquivo .env"""
+        """
+        Atualiza uma chave no arquivo .env.
+        
+        Args:
+            chave: Nome da variável de ambiente.
+            valor: Valor a ser atribuído.
+        """
         try:
             # Ler arquivo existente
             lines = []
@@ -241,7 +319,12 @@ LOG_DIR=logs
             print_erro(f"Erro ao atualizar .env: {e}")
     
     async def configurar_waha(self) -> bool:
-        """Configura a sessão do WhatsApp no WAHA"""
+        """
+        Configura a sessão do WhatsApp no WAHA.
+        
+        Returns:
+            bool: True se configurado com sucesso.
+        """
         print_titulo("CONFIGURANDO WHATSAPP")
         
         try:
@@ -309,7 +392,12 @@ LOG_DIR=logs
             return False
     
     async def iniciar_api(self):
-        """Inicia a API FastAPI"""
+        """
+        Inicia a API FastAPI.
+        
+        Returns:
+            bool: True se a API foi iniciada com sucesso.
+        """
         print_titulo("INICIANDO API")
         
         try:
@@ -341,7 +429,7 @@ LOG_DIR=logs
                         print_sucesso(f"API rodando em http://localhost:{self.api_port}")
                         print_info(f"Documentação em: http://localhost:{self.api_port}/docs")
                         return True
-                except:
+                except requests.exceptions.RequestException:
                     await asyncio.sleep(1)
             
             print_erro("Servidor não iniciou no tempo esperado")
@@ -352,7 +440,12 @@ LOG_DIR=logs
             return False
     
     async def testar_sistema(self):
-        """Realiza teste completo do sistema"""
+        """
+        Realiza teste completo do sistema.
+        
+        Returns:
+            bool: True se todos os testes passaram.
+        """
         print_titulo("TESTANDO SISTEMA COMPLETO")
         
         try:
@@ -403,7 +496,12 @@ LOG_DIR=logs
             return False
     
     async def executar(self):
-        """Executa todo o processo de configuração"""
+        """
+        Executa todo o processo de configuração.
+        
+        Este é o método principal que orquestra todo o processo de configuração
+        do bot WhatsApp, desde a verificação de requisitos até os testes finais.
+        """
         print_colorido("\n🤖 CONFIGURADOR DO BOT WHATSAPP 🤖", Cores.NEGRITO + Cores.AZUL)
         print("=" * 60)
         
@@ -446,9 +544,9 @@ LOG_DIR=logs
                 print(f"3. Webhook configurado em: {ngrok_url}/webhook/whatsapp")
                 print(f"4. Logs em: logs/log_bot.log")
                 print("\nExemplos de perguntas para testar:")
-                print("  - 'Quais os produtos mais vendidos?'")
+                print("  - 'Quais os produtos mais vendidos este mês?'")
                 print("  - 'Qual o limite de crédito do cliente João?'")
-                print("  - 'Mostre os pedidos do cliente 123'")
+                print("  - 'Mostre os pedidos do cliente 123 este mês'")
                 print("\n" + "=" * 60)
                 print_info("Pressione Ctrl+C para parar o sistema")
                 
@@ -470,7 +568,13 @@ LOG_DIR=logs
                 print_info("API encerrada")
 
 async def main():
-    """Função principal"""
+    """
+    Função principal do configurador.
+    
+    Examples:
+        >>> await main()
+        # Executa todo o processo de configuração
+    """
     configurador = ConfiguradorWhatsApp()
     await configurador.executar()
 

@@ -1,19 +1,78 @@
+# app/core/processador_whatsapp.py
+"""
+Processador de Mensagens do WhatsApp via WAHA
+
+Este módulo gerencia o processamento de mensagens recebidas do WhatsApp,
+incluindo diferentes tipos de mídia e integração com o sistema de contexto.
+
+Versão 2.1: Corrigidas importações do LangChain para compatibilidade Python 3.10.11
+"""
 
 import logging
 from typing import Dict, Any
+
+from langchain_community.llms.ollama import Ollama
 from app.core.orquestrador import gerenciar_consulta_usuario
 from app.core.gerenciador_contexto import gerenciador_contexto
 from app.core.cliente_waha import cliente_waha
-from langchain_community.chat_models.ollama import ChatOllama
 
 logger = logging.getLogger(__name__)
 
 class ProcessadorWhatsApp:
+    """
+    Classe responsável por processar mensagens recebidas do WhatsApp.
+    
+    Esta classe atua como uma ponte entre o webhook do WhatsApp (via WAHA)
+    e o sistema de processamento de consultas do bot, garantindo que:
+    
+    1. Mensagens sejam processadas apenas uma vez (evita duplicatas)
+    2. Contexto da conversa seja mantido por usuário
+    3. Diferentes tipos de mídia sejam tratados adequadamente
+    4. Respostas sejam enviadas de volta pelo WhatsApp
+    
+    Attributes:
+        mensagens_processando: Set com IDs de mensagens sendo processadas para evitar duplicatas.
+    """
+    
     def __init__(self):
+        """
+        Inicializa o processador com controle de mensagens duplicadas.
+        
+        Examples:
+            >>> processador = ProcessadorWhatsApp()
+            >>> len(processador.mensagens_processando)
+            0
+        """
         self.mensagens_processando = set()
     
-    async def processar_mensagem(self, llm: ChatOllama, webhook_data: Dict[str, Any]) -> bool:
-        """Processa mensagem recebida do WhatsApp via webhook"""
+    async def processar_mensagem(self, llm: Ollama, webhook_data: Dict[str, Any]) -> bool:
+        """
+        Processa mensagem recebida do WhatsApp via webhook.
+        
+        Args:
+            llm: Instância do modelo Ollama para processamento de linguagem natural.
+            webhook_data: Dados recebidos do webhook do WAHA contendo a mensagem.
+            
+        Returns:
+            bool: True se a mensagem foi processada e respondida com sucesso.
+            
+        Examples:
+            >>> llm = Ollama(base_url="http://localhost:11434", model="llama3.1")
+            >>> webhook_data = {
+            ...     "payload": {
+            ...         "event": "message",
+            ...         "data": {
+            ...             "from": "5511999999999@c.us",
+            ...             "id": "msg123",
+            ...             "type": "text",
+            ...             "body": "Olá, quais produtos temos?"
+            ...         }
+            ...     }
+            ... }
+            >>> resultado = await processador.processar_mensagem(llm, webhook_data)
+            >>> print(resultado)
+            True
+        """
         try:
             # Extrair dados da mensagem
             if "payload" not in webhook_data:
@@ -24,6 +83,7 @@ class ProcessadorWhatsApp:
             
             # Verificar se é uma mensagem
             if payload.get("event") != "message":
+                logger.debug(f"Evento ignorado: {payload.get('event')}")
                 return False
             
             message_data = payload.get("data", {})
@@ -52,6 +112,9 @@ class ProcessadorWhatsApp:
                     logger.warning(f"Não foi possível extrair texto da mensagem tipo {message_type}")
                     return False
                 
+                # Enviar indicador de "digitando..."
+                await cliente_waha.enviar_typing(chat_id, 3)
+                
                 # Adicionar ao contexto
                 await gerenciador_contexto.adicionar_mensagem(
                     usuario_id=chat_id,
@@ -63,11 +126,14 @@ class ProcessadorWhatsApp:
                 contexto = await gerenciador_contexto.obter_contexto(chat_id)
                 
                 # Construir prompt com contexto
-                prompt_completo = f"{contexto}Pergunta atual: {texto_usuario}"
+                prompt_completo = f"{contexto}{texto_usuario}" if contexto else texto_usuario
                 
                 # Processar com a IA
                 logger.info(f"Processando mensagem de {chat_id}: {texto_usuario[:50]}...")
                 resposta = await gerenciar_consulta_usuario(llm, prompt_completo)
+                
+                # Adicionar resposta ao contexto
+                await gerenciador_contexto.adicionar_resposta_bot(chat_id, resposta)
                 
                 # Enviar resposta
                 sucesso = await cliente_waha.enviar_mensagem(chat_id, resposta)
@@ -88,13 +154,32 @@ class ProcessadorWhatsApp:
             return False
     
     async def _extrair_texto_mensagem(self, message_data: Dict[str, Any]) -> str:
-        """Extrai texto de diferentes tipos de mensagem"""
+        """
+        Extrai texto de diferentes tipos de mensagem do WhatsApp.
+        
+        Args:
+            message_data: Dados da mensagem recebida do webhook.
+            
+        Returns:
+            str: Texto extraído ou descrição da mensagem para tipos não textuais.
+            
+        Examples:
+            >>> message_data = {"type": "text", "body": "Olá!"}
+            >>> texto = await processador._extrair_texto_mensagem(message_data)
+            >>> print(texto)
+            "Olá!"
+            
+            >>> message_data = {"type": "image", "caption": "Veja esta foto"}
+            >>> texto = await processador._extrair_texto_mensagem(message_data)
+            >>> print(texto)
+            "[Imagem recebida] Veja esta foto"
+        """
         message_type = message_data.get("type", "text")
         
         if message_type == "text":
             return message_data.get("body", "")
         
-        elif message_type == "ptt" or message_type == "audio":
+        elif message_type in ["ptt", "audio"]:
             # Mensagem de voz
             logger.info("Processando mensagem de voz")
             
@@ -116,6 +201,24 @@ class ProcessadorWhatsApp:
             # Mensagem com imagem
             caption = message_data.get("caption", "")
             return f"[Imagem recebida] {caption}" if caption else "[Imagem recebida]"
+        
+        elif message_type == "video":
+            # Mensagem com vídeo
+            caption = message_data.get("caption", "")
+            return f"[Vídeo recebido] {caption}" if caption else "[Vídeo recebido]"
+        
+        elif message_type == "document":
+            # Mensagem com documento
+            filename = message_data.get("filename", "documento")
+            return f"[Documento recebido: {filename}]"
+        
+        elif message_type == "location":
+            # Mensagem com localização
+            return "[Localização recebida]"
+        
+        elif message_type == "contact":
+            # Mensagem com contato
+            return "[Contato recebido]"
         
         else:
             return f"[Mensagem do tipo {message_type} recebida]"

@@ -5,13 +5,13 @@ Módulo orquestrador principal - VERSÃO CORRIGIDA E COMPLETA
 Este módulo coordena todo o fluxo de processamento de consultas do usuário,
 desde a identificação da intenção até a entrega da resposta final.
 
-Versão 3.0: Corrigida assinatura da função sumarizar_resultados
+Versão 3.1: Corrigidas importações do LangChain para compatibilidade Python 3.10.11
 """
 
 import logging
 from typing import Any, Dict, Awaitable, Callable, Tuple
 
-from langchain_community.chat_models.ollama import ChatOllama
+from langchain_community.llms.ollama import Ollama
 
 from app.agentes.agente_roteador import obter_intencao
 from app.agentes.agente_sumarizador import sumarizar_resultados
@@ -30,18 +30,22 @@ async def _resolver_cliente(entidades: Dict[str, Any]) -> int:
     Resolve o código do cliente a partir do nome ou código fornecido.
     
     Args:
-        entidades: Dicionário contendo as entidades extraídas.
+        entidades: Dicionário contendo as entidades extraídas da pergunta do usuário.
         
     Returns:
-        int: Código do cliente encontrado.
+        int: Código do cliente encontrado no banco de dados.
         
     Raises:
-        ValueError: Se nenhum cliente for encontrado ou houver ambiguidade.
+        ValueError: Se nenhum cliente for encontrado ou houver ambiguidade na busca.
         
     Examples:
-        >>> entidades = {"nome_cliente": "João"}
+        >>> entidades = {"nome_cliente": "João Silva"}
         >>> codigo = await _resolver_cliente(entidades)
         >>> print(codigo)  # 12345
+        
+        >>> entidades = {"codigo_cliente": 123}
+        >>> codigo = await _resolver_cliente(entidades)
+        >>> print(codigo)  # 123
     """
     codigo_cliente = entidades.get("codigo_cliente")
     nome_cliente = entidades.get("nome_cliente")
@@ -70,11 +74,17 @@ async def _manipular_produtos_classificados(entidades: Dict[str, Any]) -> Result
         entidades: Dicionário com criterio_classificacao, periodo_tempo e limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
         
     Examples:
-        >>> entidades = {"criterio_classificacao": "mais_vendidos", "periodo_tempo": "este_mes", "limite": 5}
+        >>> entidades = {
+        ...     "criterio_classificacao": "mais_vendidos", 
+        ...     "periodo_tempo": "este_mes", 
+        ...     "limite": 5
+        ... }
         >>> sql, params = await _manipular_produtos_classificados(entidades)
+        >>> print(type(sql))
+        <class 'str'>
     """
     criterio = entidades.get("criterio_classificacao")
     if not criterio:
@@ -99,7 +109,7 @@ async def _manipular_registros_vendas(entidades: Dict[str, Any]) -> ResultadoQue
         entidades: Dicionário com nome_cliente/codigo_cliente, periodo_tempo e limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     codigo_cliente = await _resolver_cliente(entidades)
     periodo = entidades.get("periodo_tempo", "este_mes")
@@ -118,7 +128,7 @@ async def _manipular_detalhes_produto(entidades: Dict[str, Any]) -> ResultadoQue
         entidades: Dicionário com nome_produto.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     nome_produto = entidades.get("nome_produto")
     if not nome_produto:
@@ -133,7 +143,7 @@ async def _manipular_itens_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
         entidades: Dicionário com id_pedido.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     id_pedido = entidades.get("id_pedido")
     if not id_pedido:
@@ -148,7 +158,7 @@ async def _manipular_limite_credito(entidades: Dict[str, Any]) -> ResultadoQuery
         entidades: Dicionário com nome_cliente ou codigo_cliente.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     codigo_cliente = await _resolver_cliente(entidades)
     return ferramentas_sql.construir_query_limite_credito(codigo_cliente)
@@ -161,7 +171,7 @@ async def _manipular_status_cliente(entidades: Dict[str, Any]) -> ResultadoQuery
         entidades: Dicionário com nome_cliente ou codigo_cliente.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     codigo_cliente = await _resolver_cliente(entidades)
     return ferramentas_sql.construir_query_status_cliente(codigo_cliente)
@@ -174,7 +184,7 @@ async def _manipular_contato_cliente(entidades: Dict[str, Any]) -> ResultadoQuer
         entidades: Dicionário com nome_cliente ou codigo_cliente.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     codigo_cliente = await _resolver_cliente(entidades)
     return ferramentas_sql.construir_query_contato_cliente(codigo_cliente)
@@ -187,7 +197,7 @@ async def _manipular_endereco_cliente(entidades: Dict[str, Any]) -> ResultadoQue
         entidades: Dicionário com nome_cliente ou codigo_cliente.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     codigo_cliente = await _resolver_cliente(entidades)
     return ferramentas_sql.construir_query_endereco_cliente(codigo_cliente)
@@ -200,7 +210,7 @@ async def _manipular_clientes_por_cidade(entidades: Dict[str, Any]) -> Resultado
         entidades: Dicionário com cidade e limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     cidade = entidades.get("cidade")
     if not cidade:
@@ -215,7 +225,7 @@ async def _manipular_clientes_recentes(entidades: Dict[str, Any]) -> ResultadoQu
         entidades: Dicionário com periodo_tempo e limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     periodo = entidades.get("periodo_tempo")
     if not periodo or periodo == "sempre":
@@ -230,7 +240,7 @@ async def _manipular_produtos_por_marca(entidades: Dict[str, Any]) -> ResultadoQ
         entidades: Dicionário com marca e limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     marca = entidades.get("marca")
     if not marca:
@@ -245,7 +255,7 @@ async def _manipular_produtos_descontinuados(entidades: Dict[str, Any]) -> Resul
         entidades: Dicionário com limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     return ferramentas_sql.construir_query_produtos_descontinuados(entidades.get("limite", 20))
 
@@ -257,7 +267,7 @@ async def _manipular_posicao_pedido(entidades: Dict[str, Any]) -> ResultadoQuery
         entidades: Dicionário com id_pedido.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     id_pedido = entidades.get("id_pedido")
     if not id_pedido:
@@ -272,7 +282,7 @@ async def _manipular_valor_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
         entidades: Dicionário com id_pedido.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     id_pedido = entidades.get("id_pedido")
     if not id_pedido:
@@ -287,7 +297,7 @@ async def _manipular_data_entrega_pedido(entidades: Dict[str, Any]) -> Resultado
         entidades: Dicionário com id_pedido.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     id_pedido = entidades.get("id_pedido")
     if not id_pedido:
@@ -302,7 +312,7 @@ async def _manipular_pedidos_por_posicao(entidades: Dict[str, Any]) -> Resultado
         entidades: Dicionário com posicao e limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     posicao = entidades.get("posicao")
     if not posicao:
@@ -317,7 +327,7 @@ async def _manipular_clientes_classificados(entidades: Dict[str, Any]) -> Result
         entidades: Dicionário com criterio_classificacao, periodo_tempo e limite.
         
     Returns:
-        Tupla com SQL e parâmetros para execução.
+        ResultadoQuery: Tupla com SQL e parâmetros para execução.
     """
     criterio = entidades.get("criterio_classificacao")
     if not criterio:
@@ -355,7 +365,7 @@ MAPEAMENTO_INTENCOES: Dict[str, TipoManipuladorIntencao] = {
     "buscar_clientes_classificados": _manipular_clientes_classificados,
 }
 
-async def gerenciar_consulta_usuario(llm: ChatOllama, texto_usuario: str) -> str:
+async def gerenciar_consulta_usuario(llm: Ollama, texto_usuario: str) -> str:
     """
     Orquestra o processamento completo de uma consulta do usuário.
     
@@ -363,17 +373,17 @@ async def gerenciar_consulta_usuario(llm: ChatOllama, texto_usuario: str) -> str
     construção de query, execução no banco e sumarização dos resultados.
     
     Args:
-        llm: Instância do modelo de linguagem para processamento.
+        llm: Instância do modelo Ollama para processamento de linguagem natural.
         texto_usuario: Pergunta ou comando do usuário em linguagem natural.
         
     Returns:
         str: Resposta formatada em linguagem natural para o usuário.
         
     Examples:
-        >>> llm = ChatOllama(base_url="http://localhost:11434", model="llama3.1")
+        >>> llm = Ollama(base_url="http://localhost:11434", model="llama3.1")
         >>> resposta = await gerenciar_consulta_usuario(llm, "quais os 5 produtos mais vendidos?")
         >>> print(resposta)
-        "Encontrei os 5 produtos mais vendidos este mês:..."
+        "Para consultar os produtos mais vendidos, preciso saber o período..."
     """
     logger.info(f"--- INÍCIO DA ORQUESTRAÇÃO PARA: '{texto_usuario}' ---")
     try:
@@ -430,11 +440,10 @@ async def gerenciar_consulta_usuario(llm: ChatOllama, texto_usuario: str) -> str
         logger.info(f"Consulta executada com sucesso. {len(dados)} registros encontrados.")
 
         # Fase 5: Sumarizar resultados
-        # CORREÇÃO: Usando a assinatura correta da função
         resposta_final = await sumarizar_resultados(
             llm=llm,
-            pergunta=texto_usuario,  # Mudado de 'pergunta_original' para 'pergunta'
-            dados=dados  # Mudado de 'dados_brutos' para 'dados'
+            pergunta=texto_usuario,
+            dados=dados
         )
 
         logger.info("Orquestração concluída com sucesso.")

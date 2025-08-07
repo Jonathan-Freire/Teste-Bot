@@ -2,3 +2,19 @@
 06-08-2025 21:18:57 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
 06-08-2025 21:18:57 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
 06-08-2025 21:18:57 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 09:03:02 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 09:03:02 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 09:03:02 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 09:03:02 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 09:34:29 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 09:34:29 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 09:34:29 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 09:34:29 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 09:40:49 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 09:40:49 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 09:40:49 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 09:40:49 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 09:45:02 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 09:45:02 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 09:45:02 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 09:45:02 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.

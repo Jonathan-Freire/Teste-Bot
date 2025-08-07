@@ -5,6 +5,8 @@ Script de Teste Completo para o Sistema de ChatBot WhatsApp
 Este script funciona como um "médico" que examina cada parte do seu sistema
 para garantir que tudo está funcionando corretamente antes de começar os testes reais.
 
+Versão 2.1: Corrigidas importações do LangChain para compatibilidade Python 3.10.11
+
 Execute este script antes de começar a testar com o WhatsApp para identificar 
 e corrigir qualquer problema de configuração.
 
@@ -18,9 +20,7 @@ import asyncio
 import logging
 import os
 import sys
-import json
 from datetime import datetime
-from typing import Dict, Any
 
 # Configurar logging para testes
 logging.basicConfig(
@@ -40,9 +40,21 @@ class TestadorSistema:
     
     Pense nesta classe como um técnico especializado que conhece 
     cada parte do sistema e sabe como testá-las adequadamente.
+    
+    Attributes:
+        resultados_teste: Dicionário para armazenar resultados dos testes.
+        erros_encontrados: Lista de erros encontrados durante os testes.
     """
     
     def __init__(self):
+        """
+        Inicializa o testador com contadores zerados.
+        
+        Examples:
+            >>> testador = TestadorSistema()
+            >>> len(testador.erros_encontrados)
+            0
+        """
         self.resultados_teste = {}
         self.erros_encontrados = []
         
@@ -53,6 +65,15 @@ class TestadorSistema:
         A ordem dos testes é importante: primeiro testamos as bases 
         (configuração, banco de dados) e depois os componentes 
         mais complexos que dependem delas.
+        
+        Returns:
+            bool: True se todos os testes passaram, False caso contrário.
+            
+        Examples:
+            >>> testador = TestadorSistema()
+            >>> resultado = await testador.executar_todos_os_testes()
+            >>> print(resultado)
+            True  # Se tudo estiver ok
         """
         print("=" * 60)
         print("🔍 INICIANDO VALIDAÇÃO COMPLETA DO SISTEMA")
@@ -107,7 +128,12 @@ class TestadorSistema:
             return False
     
     async def _testar_configuracao_ambiente(self) -> bool:
-        """Testa se todas as variáveis de ambiente estão configuradas"""
+        """
+        Testa se todas as variáveis de ambiente estão configuradas.
+        
+        Returns:
+            bool: True se todas as variáveis necessárias estão configuradas.
+        """
         from dotenv import load_dotenv
         load_dotenv()
         
@@ -133,9 +159,14 @@ class TestadorSistema:
         return True
     
     async def _testar_conexao_ollama(self) -> bool:
-        """Testa conexão com o Ollama e se o modelo está disponível"""
+        """
+        Testa conexão com o Ollama e se o modelo está disponível.
+        
+        Returns:
+            bool: True se o Ollama está respondendo adequadamente.
+        """
         try:
-            from langchain_community.chat_models.ollama import ChatOllama
+            from langchain_community.llms.ollama import Ollama
             
             base_url = os.getenv("OLLAMA_BASE_URL")
             model = os.getenv("LLM_MODEL")
@@ -143,13 +174,13 @@ class TestadorSistema:
             print(f"   🔗 Conectando com Ollama em {base_url}")
             print(f"   🤖 Testando modelo: {model}")
             
-            llm = ChatOllama(base_url=base_url, model=model)
+            llm = Ollama(base_url=base_url, model=model)
             
             # Teste simples de resposta
             resposta = await llm.ainvoke("Responda apenas 'OK' para confirmar funcionamento.")
             
-            if resposta and resposta.content:
-                print(f"   ✅ Modelo respondeu: {resposta.content[:50]}...")
+            if resposta and len(str(resposta)) > 0:
+                print(f"   ✅ Modelo respondeu: {str(resposta)[:50]}...")
                 return True
             else:
                 print(f"   ❌ Modelo não respondeu adequadamente")
@@ -160,7 +191,12 @@ class TestadorSistema:
             return False
     
     async def _testar_base_dados(self) -> bool:
-        """Testa conexão com a base de dados e execução de uma query simples"""
+        """
+        Testa conexão com a base de dados e execução de uma query simples.
+        
+        Returns:
+            bool: True se a base de dados está respondendo.
+        """
         try:
             # Importar o módulo de consultas
             sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -192,15 +228,20 @@ class TestadorSistema:
             return False
     
     async def _testar_processamento_intencoes(self) -> bool:
-        """Testa o sistema de processamento de intenções"""
+        """
+        Testa o sistema de processamento de intenções.
+        
+        Returns:
+            bool: True se o processamento de intenções está funcionando.
+        """
         try:
             sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             from app.core.orquestrador import gerenciar_consulta_usuario
-            from langchain_community.chat_models.ollama import ChatOllama
+            from langchain_community.llms.ollama import Ollama
             
             base_url = os.getenv("OLLAMA_BASE_URL")
             model = os.getenv("LLM_MODEL")
-            llm = ChatOllama(base_url=base_url, model=model)
+            llm = Ollama(base_url=base_url, model=model)
             
             # Teste com pergunta simples sobre produtos
             pergunta_teste = "me mostra os 3 produtos mais vendidos este mês"
@@ -225,7 +266,12 @@ class TestadorSistema:
             return False
     
     async def _testar_gerenciador_contexto(self) -> bool:
-        """Testa o gerenciador de contexto para múltiplas conversas"""
+        """
+        Testa o gerenciador de contexto para múltiplas conversas.
+        
+        Returns:
+            bool: True se o gerenciador de contexto está funcionando.
+        """
         try:
             sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             from app.core.gerenciador_contexto import gerenciador_contexto
@@ -262,7 +308,12 @@ class TestadorSistema:
             return False
     
     async def _testar_cliente_waha(self) -> bool:
-        """Testa o cliente WAHA (configuração básica)"""
+        """
+        Testa o cliente WAHA (configuração básica).
+        
+        Returns:
+            bool: True se as configurações básicas do WAHA estão corretas.
+        """
         try:
             sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             from app.core.cliente_waha import cliente_waha
@@ -284,15 +335,20 @@ class TestadorSistema:
             return False
     
     async def _testar_fluxo_completo(self) -> bool:
-        """Testa o fluxo completo simulando uma mensagem do WhatsApp"""
+        """
+        Testa o fluxo completo simulando uma mensagem do WhatsApp.
+        
+        Returns:
+            bool: True se o fluxo completo está funcionando.
+        """
         try:
             sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             from app.core.processador_whatsapp import processador_whatsapp
-            from langchain_community.chat_models.ollama import ChatOllama
+            from langchain_community.llms.ollama import Ollama
             
             base_url = os.getenv("OLLAMA_BASE_URL")
             model = os.getenv("LLM_MODEL")
-            llm = ChatOllama(base_url=base_url, model=model)
+            llm = Ollama(base_url=base_url, model=model)
             
             # Simular webhook do WhatsApp
             webhook_simulado = {
@@ -340,7 +396,15 @@ class TestadorSistema:
 
 # Função principal para execução dos testes
 async def main():
-    """Executa todos os testes"""
+    """
+    Executa todos os testes do sistema.
+    
+    Esta função é o ponto de entrada principal do script de testes.
+    
+    Examples:
+        >>> await main()
+        # Executa todos os testes e exibe relatório
+    """
     # Garantir que o diretório de logs existe
     os.makedirs("logs", exist_ok=True)
     

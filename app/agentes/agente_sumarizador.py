@@ -2,8 +2,7 @@
 """
 Módulo responsável por sumarizar resultados de consultas.
 
-Versão 2.0: O prompt foi aprimorado com instruções específicas para formatar
-os novos tipos de dados (endereços, status de cliente, etc.) de forma clara.
+Versão 2.1: Corrigidas importações do LangChain e compatibilidade Python 3.10.11
 Mantém a persona de um assistente prestativo e a capacidade de sugerir
 próximas ações, tornando a interação mais natural e guiada.
 """
@@ -13,7 +12,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.chat_models.ollama import ChatOllama
+from langchain_community.llms.ollama import Ollama
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +45,27 @@ Formule sua resposta final abaixo:
 prompt = ChatPromptTemplate.from_template(template=template_prompt)
 
 async def sumarizar_resultados(
-    llm: ChatOllama, 
+    llm: Ollama, 
     pergunta: str, 
     dados: Optional[List[Dict[str, Any]]]
 ) -> str:
     """
     Gera um resumo em linguagem natural a partir de dados de uma consulta.
+    
+    Args:
+        llm: Instância do modelo Ollama para processamento de linguagem natural.
+        pergunta: A pergunta original do usuário que gerou os dados.
+        dados: Lista de dicionários com os dados retornados da consulta.
+    
+    Returns:
+        str: Resposta formatada em linguagem natural para o usuário.
+        
+    Examples:
+        >>> llm = Ollama(base_url="http://localhost:11434", model="llama3.1")
+        >>> dados = [{"codprod": 123, "descricao": "Produto X", "pvenda": 10.50}]
+        >>> resposta = await sumarizar_resultados(llm, "quais produtos?", dados)
+        >>> print(resposta)
+        "Encontrei as informações que você pediu:..."
     """
     logger.info("Iniciando a sumarização dos resultados.")
     
@@ -72,7 +86,11 @@ async def sumarizar_resultados(
         })
         
         logger.info("Sumarização gerada com sucesso.")
-        return resposta.content.strip()
+        # Corrigida para acessar o conteúdo corretamente
+        if hasattr(resposta, 'content'):
+            return resposta.content.strip()
+        else:
+            return str(resposta).strip()
         
     except Exception as e:
         logger.error(f"Erro ao sumarizar resultados com o LLM: {e}", exc_info=True)

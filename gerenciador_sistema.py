@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
 import logging
+from dotenv import load_dotenv, set_key
 
 # Cores para terminal
 class Cores:
@@ -91,9 +92,16 @@ class GerenciadorWAHA:
             >>> print(len(waha.comando_base))
             10
         """
+        # Carrega variáveis do .env
+        load_dotenv()
+
         # API key do .env ou gerar uma nova
-        self.api_key = os.getenv("WAHA_API_KEY", self._gerar_api_key())
-        
+        self.api_key = os.getenv("WAHA_API_KEY")
+        if not self.api_key:
+            self.api_key = self._gerar_api_key()
+            set_key(str(Path(".env")), "WAHA_API_KEY", self.api_key)
+            os.environ["WAHA_API_KEY"] = self.api_key
+
         # Comando Docker corrigido
         self.comando_base = [
             "docker", "run", "-it", "--rm",

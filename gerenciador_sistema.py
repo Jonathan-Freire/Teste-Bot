@@ -239,7 +239,12 @@ class GerenciadorWAHA:
                 headers=headers,
                 timeout=15
             )
-            return response.status_code in [200, 201]
+            if response.status_code not in [200, 201]:
+                print_erro(
+                    f"Erro ao criar sessão WAHA: Status {response.status_code} - {response.text}"
+                )
+                return False
+            return True
         except Exception as e:
             print_erro(f"Erro ao criar sessão WAHA: {e}")
             return False

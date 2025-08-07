@@ -89,7 +89,7 @@ class GerenciadorWAHA:
         Examples:
             >>> waha = GerenciadorWAHA()
             >>> print(len(waha.comando_base))
-            8
+            10
         """
         # API key do .env ou gerar uma nova
         self.api_key = os.getenv("WAHA_API_KEY", self._gerar_api_key())
@@ -101,6 +101,7 @@ class GerenciadorWAHA:
             "-e", f"WAHA_API_KEY={self.api_key}",
             "-e", "WHATSAPP_DEFAULT_ENGINE=WEBJS",
             "-e", "WAHA_PRINT_QR=true",
+            "--name", "waha-bot",
             "devlikeapro/waha:latest"
         ]
         self.processo = None

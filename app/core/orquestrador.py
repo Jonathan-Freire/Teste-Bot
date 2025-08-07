@@ -1,17 +1,8 @@
-# app/core/orquestrador.py
-"""
-Módulo orquestrador principal - VERSÃO CORRIGIDA E COMPLETA
-
-Este módulo coordena todo o fluxo de processamento de consultas do usuário,
-desde a identificação da intenção até a entrega da resposta final.
-
-Versão 3.1: Corrigidas importações do LangChain para compatibilidade Python 3.10.11
-"""
-
 import logging
-from typing import Any, Dict, Awaitable, Callable, Tuple
+from typing import Any, Dict, Awaitable, Callable
 
-from langchain_community.llms.ollama import Ollama
+# CORREÇÃO: Importação atualizada para langchain-ollama
+from langchain_ollama import OllamaLLM
 
 from app.agentes.agente_roteador import obter_intencao
 from app.agentes.agente_sumarizador import sumarizar_resultados
@@ -110,6 +101,12 @@ async def _manipular_registros_vendas(entidades: Dict[str, Any]) -> ResultadoQue
         
     Returns:
         ResultadoQuery: Tupla com SQL e parâmetros para execução.
+        
+    Examples:
+        >>> entidades = {"nome_cliente": "João", "periodo_tempo": "este_mes"}
+        >>> sql, params = await _manipular_registros_vendas(entidades)
+        >>> print("cliente" in str(sql).lower())
+        True
     """
     codigo_cliente = await _resolver_cliente(entidades)
     periodo = entidades.get("periodo_tempo", "este_mes")
@@ -129,6 +126,12 @@ async def _manipular_detalhes_produto(entidades: Dict[str, Any]) -> ResultadoQue
         
     Returns:
         ResultadoQuery: Tupla com SQL e parâmetros para execução.
+        
+    Examples:
+        >>> entidades = {"nome_produto": "Parafuso"}
+        >>> sql, params = await _manipular_detalhes_produto(entidades)
+        >>> print("produto" in str(sql).lower())
+        True
     """
     nome_produto = entidades.get("nome_produto")
     if not nome_produto:
@@ -144,6 +147,12 @@ async def _manipular_itens_pedido(entidades: Dict[str, Any]) -> ResultadoQuery:
         
     Returns:
         ResultadoQuery: Tupla com SQL e parâmetros para execução.
+        
+    Examples:
+        >>> entidades = {"id_pedido": 12345}
+        >>> sql, params = await _manipular_itens_pedido(entidades)
+        >>> print(params["id_pedido"])
+        12345
     """
     id_pedido = entidades.get("id_pedido")
     if not id_pedido:
@@ -159,6 +168,12 @@ async def _manipular_limite_credito(entidades: Dict[str, Any]) -> ResultadoQuery
         
     Returns:
         ResultadoQuery: Tupla com SQL e parâmetros para execução.
+        
+    Examples:
+        >>> entidades = {"codigo_cliente": 123}
+        >>> sql, params = await _manipular_limite_credito(entidades)
+        >>> print(params["codigo_cliente"])
+        123
     """
     codigo_cliente = await _resolver_cliente(entidades)
     return ferramentas_sql.construir_query_limite_credito(codigo_cliente)
@@ -365,7 +380,7 @@ MAPEAMENTO_INTENCOES: Dict[str, TipoManipuladorIntencao] = {
     "buscar_clientes_classificados": _manipular_clientes_classificados,
 }
 
-async def gerenciar_consulta_usuario(llm: Ollama, texto_usuario: str) -> str:
+async def gerenciar_consulta_usuario(llm: OllamaLLM, texto_usuario: str) -> str:
     """
     Orquestra o processamento completo de uma consulta do usuário.
     
@@ -373,17 +388,19 @@ async def gerenciar_consulta_usuario(llm: Ollama, texto_usuario: str) -> str:
     construção de query, execução no banco e sumarização dos resultados.
     
     Args:
-        llm: Instância do modelo Ollama para processamento de linguagem natural.
+        llm: Instância do modelo OllamaLLM para processamento de linguagem natural.
         texto_usuario: Pergunta ou comando do usuário em linguagem natural.
         
     Returns:
         str: Resposta formatada em linguagem natural para o usuário.
         
     Examples:
-        >>> llm = Ollama(base_url="http://localhost:11434", model="llama3.1")
-        >>> resposta = await gerenciar_consulta_usuario(llm, "quais os 5 produtos mais vendidos?")
-        >>> print(resposta)
-        "Para consultar os produtos mais vendidos, preciso saber o período..."
+        >>> llm = OllamaLLM(model="llama3.1", base_url="http://localhost:11434")
+        >>> resposta = await gerenciar_consulta_usuario(llm, "quais os 5 produtos mais vendidos este mês?")
+        >>> print(type(resposta))
+        <class 'str'>
+        >>> print(len(resposta) > 0)
+        True
     """
     logger.info(f"--- INÍCIO DA ORQUESTRAÇÃO PARA: '{texto_usuario}' ---")
     try:

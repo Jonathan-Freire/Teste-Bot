@@ -1,18 +1,11 @@
-# app/agentes/agente_roteador.py
-"""
-Módulo responsável por interpretar a intenção do usuário.
-
-Versão 2.4: Corrigidas importações do LangChain e compatibilidade Python 3.10.11
-Implementada validação obrigatória de período de tempo para consultas
-que podem sobrecarregar a base de dados.
-"""
 
 import logging
 from typing import Literal, Optional, Dict, Any
 
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.llms.ollama import Ollama
+# CORREÇÃO: Importação atualizada para langchain-ollama
+from langchain_ollama import OllamaLLM
 from langchain_core.output_parsers import JsonOutputParser
 
 # Configura o logger para este módulo
@@ -163,22 +156,24 @@ prompt = ChatPromptTemplate.from_template(
     partial_variables={"instrucoes_formato": parser_json.get_format_instructions()}
 )
 
-async def obter_intencao(llm: Ollama, entrada_usuario: str) -> IntencaoConsulta:
+async def obter_intencao(llm: OllamaLLM, entrada_usuario: str) -> IntencaoConsulta:
     """
     Processa a entrada do usuário para extrair a intenção e as entidades.
     
     Args:
-        llm: Instância do modelo Ollama para processamento de linguagem natural.
+        llm: Instância do modelo OllamaLLM para processamento de linguagem natural.
         entrada_usuario: Texto da pergunta ou comando do usuário.
     
     Returns:
         IntencaoConsulta: Objeto contendo a intenção identificada e entidades extraídas.
         
     Examples:
-        >>> llm = Ollama(base_url="http://localhost:11434", model="llama3.1")
+        >>> llm = OllamaLLM(model="llama3.1", base_url="http://localhost:11434")
         >>> resultado = await obter_intencao(llm, "quais os produtos mais vendidos este mês?")
         >>> print(resultado.intencao)
         "buscar_produtos_classificados"
+        >>> print(resultado.entidades)
+        {'criterio_classificacao': 'mais_vendidos', 'periodo_tempo': 'este_mes', 'limite': 10}
     """
     logger.info("Iniciando roteamento de intenção do usuário.")
     cadeia_processamento = prompt | llm | parser_json

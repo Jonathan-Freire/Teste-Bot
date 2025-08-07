@@ -1,14 +1,3 @@
-# app/main.py
-"""
-Ponto de entrada principal da API.
-
-Este módulo configura e executa a aplicação FastAPI, gerenciando o ciclo de vida
-de recursos essenciais, como a instância do modelo de linguagem (LLM), e
-define os endpoints da API.
-
-Versão 3.1: Corrigidas importações do LangChain para compatibilidade Python 3.10.11
-"""
-
 import logging
 import os
 import asyncio
@@ -20,7 +9,8 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 from helpers_compartilhados.helpers import configurar_logging
-from langchain_community.llms.ollama import Ollama
+# CORREÇÃO: Importação atualizada para langchain-ollama
+from langchain_ollama import OllamaLLM
 from app.core.orquestrador import gerenciar_consulta_usuario
 from app.core.processador_whatsapp import processador_whatsapp
 from app.core.cliente_waha import cliente_waha
@@ -47,6 +37,10 @@ async def lifespan(app: FastAPI):
         
     Yields:
         None: Permite que a aplicação execute normalmente entre setup e teardown.
+        
+    Examples:
+        >>> # Usado automaticamente pelo FastAPI
+        >>> app = FastAPI(lifespan=lifespan)
     """
     logger.info("Iniciando a API e configurando recursos...")
     base_url = os.getenv("OLLAMA_BASE_URL")
@@ -57,8 +51,15 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("As configurações do LLM não foram encontradas no ambiente.")
 
     logger.info(f"Conectando ao LLM: {model} em {base_url}")
-    # Armazena a instância do LLM no estado da aplicação (app.state)
-    app.state.llm = Ollama(base_url=base_url, model=model)
+    # CORREÇÃO: Usando OllamaLLM com timeout adequado
+    app.state.llm = OllamaLLM(
+        model=model,
+        base_url=base_url,
+        temperature=0.1,
+        client_kwargs={"timeout": 120.0},
+        keep_alive="30m",
+        validate_model_on_init=True
+    )
     logger.info("Instância do LLM criada e pronta para uso.")
     
     yield  # A API fica operacional neste ponto
@@ -69,7 +70,7 @@ async def lifespan(app: FastAPI):
 
 
 # --- Injeção de Dependência ---
-def obter_llm(request: Request) -> Ollama:
+def obter_llm(request: Request) -> OllamaLLM:
     """
     Função de injeção de dependência para fornecer a instância do LLM.
 
@@ -80,14 +81,14 @@ def obter_llm(request: Request) -> Ollama:
         request: O objeto de requisição do FastAPI.
 
     Returns:
-        Ollama: A instância de Ollama armazenada no estado da aplicação.
+        OllamaLLM: A instância de OllamaLLM armazenada no estado da aplicação.
 
     Raises:
         HTTPException: Se a instância do LLM não estiver disponível.
         
     Examples:
         >>> # Em um endpoint
-        >>> async def meu_endpoint(llm: Ollama = Depends(obter_llm)):
+        >>> async def meu_endpoint(llm: OllamaLLM = Depends(obter_llm)):
         >>>     resposta = await llm.ainvoke("Olá!")
     """
     if not hasattr(request.app.state, 'llm') or request.app.state.llm is None:
@@ -99,7 +100,7 @@ def obter_llm(request: Request) -> Ollama:
 # --- Definição da API ---
 app = FastAPI(
     title="Bot com Arquitetura de Agente",
-    version="4.1.0",
+    version="4.2.0",
     description="""
 API que utiliza uma arquitetura de Agente com Ferramentas para consultar um banco de dados de forma conversacional.
 
@@ -108,6 +109,12 @@ API que utiliza uma arquitetura de Agente com Ferramentas para consultar um banc
 * **Construção de Query Segura:** Gera consultas SQL parametrizadas.
 * **Sumarização:** Transforma dados brutos em respostas amigáveis.
 * **WhatsApp Integration:** Processa mensagens via webhook WAHA.
+
+**Versão 4.2.0 - Melhorias:**
+* ✅ Migração para langchain-ollama
+* ✅ Timeout configurável para LLM
+* ✅ Validação de modelo na inicialização
+* ✅ Gerenciamento otimizado de recursos
     """,
     lifespan=lifespan
 )
@@ -123,7 +130,7 @@ class MensagemUsuario(BaseModel):
         texto: Conteúdo da mensagem/pergunta do usuário.
     """
     id_usuario: str = Field(..., description="Identificador único do usuário.", example="user-123")
-    texto: str = Field(..., description="O texto da mensagem enviada pelo usuário.", example="quais os 5 produtos mais vendidos?")
+    texto: str = Field(..., description="O texto da mensagem enviada pelo usuário.", example="quais os 5 produtos mais vendidos este mês?")
 
 
 class RespostaBot(BaseModel):
@@ -146,27 +153,47 @@ def ler_raiz():
     
     Returns:
         dict: Dicionário com informações sobre o status da API.
+        
+    Examples:
+        >>> # GET /
+        >>> {"status": "API operacional", "versao": "4.2.0"}
     """
-    return {"status": "API operacional. Use o endpoint /chat para interagir."}
+    return {
+        "status": "API operacional. Use o endpoint /chat para interagir.",
+        "versao": "4.2.0",
+        "llm_engine": "langchain-ollama"
+    }
 
 
 @app.post("/chat", response_model=RespostaBot, summary="Interage com o Bot", tags=["Chat"])
 async def endpoint_chat(
     mensagem: MensagemUsuario,
-    llm: Annotated[Ollama, Depends(obter_llm)]
+    llm: Annotated[OllamaLLM, Depends(obter_llm)]
 ):
     """
     Recebe uma mensagem do usuário, processa através do orquestrador e retorna a resposta.
     
     Args:
         mensagem: Objeto contendo o ID do usuário e o texto da mensagem.
-        llm: Instância do modelo Ollama (injetada automaticamente).
+        llm: Instância do modelo OllamaLLM (injetada automaticamente).
         
     Returns:
         RespostaBot: Objeto contendo o ID do usuário e a resposta gerada.
         
     Raises:
         HTTPException: Em caso de erro interno do servidor.
+        
+    Examples:
+        >>> # POST /chat
+        >>> {
+        >>>   "id_usuario": "user123",
+        >>>   "texto": "quais os produtos mais vendidos?"
+        >>> }
+        >>> # Response:
+        >>> {
+        >>>   "id_usuario": "user123",
+        >>>   "resposta": "Aqui estão os produtos mais vendidos..."
+        >>> }
     """
     try:
         texto_resposta = await gerenciar_consulta_usuario(llm, mensagem.texto)
@@ -181,20 +208,32 @@ async def endpoint_chat(
 @app.post("/webhook/whatsapp", summary="Webhook do WhatsApp", tags=["WhatsApp"])
 async def webhook_whatsapp(
     request: Request,
-    llm: Annotated[Ollama, Depends(obter_llm)]
+    llm: Annotated[OllamaLLM, Depends(obter_llm)]
 ):
     """
     Recebe webhooks do WAHA para processar mensagens do WhatsApp.
     
     Args:
         request: Objeto de requisição contendo os dados do webhook.
-        llm: Instância do modelo Ollama (injetada automaticamente).
+        llm: Instância do modelo OllamaLLM (injetada automaticamente).
         
     Returns:
         dict: Confirmação de recebimento do webhook.
         
     Raises:
         HTTPException: Em caso de erro no processamento do webhook.
+        
+    Examples:
+        >>> # POST /webhook/whatsapp
+        >>> {
+        >>>   "payload": {
+        >>>     "event": "message",
+        >>>     "data": {
+        >>>       "from": "5511999999999@c.us",
+        >>>       "body": "Olá, como posso ajudar?"
+        >>>     }
+        >>>   }
+        >>> }
     """
     try:
         webhook_data = await request.json()
@@ -219,12 +258,20 @@ async def status_whatsapp():
     
     Returns:
         dict: Informações sobre o status da conexão WhatsApp.
+        
+    Examples:
+        >>> # GET /whatsapp/status
+        >>> {
+        >>>   "whatsapp_conectado": True,
+        >>>   "session_name": "default",
+        >>>   "status": "WORKING"
+        >>> }
     """
     try:
         status_info = await cliente_waha.verificar_sessao()
         return {
             "whatsapp_conectado": status_info.get("conectado", False),
-            "session_name": cliente_waha.session_name,
+            "session_name": cliente_waha.config.session_name,
             "status": status_info.get("status", "unknown"),
             "qr_code": status_info.get("qr_code")
         }
@@ -244,6 +291,13 @@ async def iniciar_whatsapp():
     
     Returns:
         dict: Resultado da tentativa de iniciar a sessão.
+        
+    Examples:
+        >>> # POST /whatsapp/iniciar
+        >>> {
+        >>>   "status": "success",
+        >>>   "mensagem": "Sessão iniciada com sucesso"
+        >>> }
     """
     try:
         resultado = await cliente_waha.iniciar_sessao()

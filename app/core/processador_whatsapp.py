@@ -1,17 +1,8 @@
-# app/core/processador_whatsapp.py
-"""
-Processador de Mensagens do WhatsApp via WAHA
-
-Este módulo gerencia o processamento de mensagens recebidas do WhatsApp,
-incluindo diferentes tipos de mídia e integração com o sistema de contexto.
-
-Versão 2.1: Corrigidas importações do LangChain para compatibilidade Python 3.10.11
-"""
-
 import logging
 from typing import Dict, Any
 
-from langchain_community.llms.ollama import Ollama
+# CORREÇÃO: Importação atualizada para langchain-ollama
+from langchain_ollama import OllamaLLM
 from app.core.orquestrador import gerenciar_consulta_usuario
 from app.core.gerenciador_contexto import gerenciador_contexto
 from app.core.cliente_waha import cliente_waha
@@ -45,19 +36,19 @@ class ProcessadorWhatsApp:
         """
         self.mensagens_processando = set()
     
-    async def processar_mensagem(self, llm: Ollama, webhook_data: Dict[str, Any]) -> bool:
+    async def processar_mensagem(self, llm: OllamaLLM, webhook_data: Dict[str, Any]) -> bool:
         """
         Processa mensagem recebida do WhatsApp via webhook.
         
         Args:
-            llm: Instância do modelo Ollama para processamento de linguagem natural.
+            llm: Instância do modelo OllamaLLM para processamento de linguagem natural.
             webhook_data: Dados recebidos do webhook do WAHA contendo a mensagem.
             
         Returns:
             bool: True se a mensagem foi processada e respondida com sucesso.
             
         Examples:
-            >>> llm = Ollama(base_url="http://localhost:11434", model="llama3.1")
+            >>> llm = OllamaLLM(model="llama3.1", base_url="http://localhost:11434")
             >>> webhook_data = {
             ...     "payload": {
             ...         "event": "message",

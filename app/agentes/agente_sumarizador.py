@@ -1,18 +1,10 @@
-# app/agentes/agente_sumarizador.py
-"""
-Módulo responsável por sumarizar resultados de consultas.
-
-Versão 2.1: Corrigidas importações do LangChain e compatibilidade Python 3.10.11
-Mantém a persona de um assistente prestativo e a capacidade de sugerir
-próximas ações, tornando a interação mais natural e guiada.
-"""
-
 import json
 import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.llms.ollama import Ollama
+# CORREÇÃO: Importação atualizada para langchain-ollama
+from langchain_ollama import OllamaLLM
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +37,7 @@ Formule sua resposta final abaixo:
 prompt = ChatPromptTemplate.from_template(template=template_prompt)
 
 async def sumarizar_resultados(
-    llm: Ollama, 
+    llm: OllamaLLM, 
     pergunta: str, 
     dados: Optional[List[Dict[str, Any]]]
 ) -> str:
@@ -53,7 +45,7 @@ async def sumarizar_resultados(
     Gera um resumo em linguagem natural a partir de dados de uma consulta.
     
     Args:
-        llm: Instância do modelo Ollama para processamento de linguagem natural.
+        llm: Instância do modelo OllamaLLM para processamento de linguagem natural.
         pergunta: A pergunta original do usuário que gerou os dados.
         dados: Lista de dicionários com os dados retornados da consulta.
     
@@ -61,11 +53,16 @@ async def sumarizar_resultados(
         str: Resposta formatada em linguagem natural para o usuário.
         
     Examples:
-        >>> llm = Ollama(base_url="http://localhost:11434", model="llama3.1")
+        >>> llm = OllamaLLM(model="llama3.1", base_url="http://localhost:11434")
         >>> dados = [{"codprod": 123, "descricao": "Produto X", "pvenda": 10.50}]
         >>> resposta = await sumarizar_resultados(llm, "quais produtos?", dados)
         >>> print(resposta)
         "Encontrei as informações que você pediu:..."
+        
+        >>> # Exemplo com dados vazios
+        >>> resposta = await sumarizar_resultados(llm, "produtos inexistentes", [])
+        >>> print(resposta)
+        "Desculpe, não encontrei nenhum resultado para a sua consulta no banco de dados."
     """
     logger.info("Iniciando a sumarização dos resultados.")
     
@@ -86,12 +83,28 @@ async def sumarizar_resultados(
         })
         
         logger.info("Sumarização gerada com sucesso.")
-        # Corrigida para acessar o conteúdo corretamente
+        
+        # Corrigida para acessar o conteúdo corretamente baseado no tipo de resposta
         if hasattr(resposta, 'content'):
-            return resposta.content.strip()
+            resultado = resposta.content.strip()
         else:
-            return str(resposta).strip()
+            resultado = str(resposta).strip()
+        
+        # Validar se a resposta não está vazia
+        if not resultado:
+            logger.warning("Resposta da IA está vazia, usando fallback.")
+            return "Encontrei dados para sua consulta, mas houve um problema ao formatá-los. Tente perguntar de forma mais específica."
+        
+        return resultado
         
     except Exception as e:
         logger.error(f"Erro ao sumarizar resultados com o LLM: {e}", exc_info=True)
-        return "Tive um problema ao tentar interpretar os dados encontrados. Por favor, tente sua consulta novamente."
+        
+        # Fallback em caso de erro - criar uma resposta básica
+        try:
+            if len(dados) == 1:
+                return f"Encontrei 1 resultado para sua consulta: {str(dados[0])}"
+            else:
+                return f"Encontrei {len(dados)} resultados para sua consulta. Primeiro resultado: {str(dados[0])}"
+        except:
+            return "Tive um problema ao tentar interpretar os dados encontrados. Por favor, tente sua consulta novamente."

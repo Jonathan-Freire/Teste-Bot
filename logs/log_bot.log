@@ -1,4 +1,70 @@
-07-08-2025 12:16:53 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
-07-08-2025 12:16:53 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
-07-08-2025 12:16:53 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
-07-08-2025 12:16:53 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 15:48:18 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 15:48:18 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 15:48:18 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 15:48:18 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 15:48:18 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002C499E86B00>
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 18:48:18 GMT'), (b'Content-Length', b'679')])
+07-08-2025 15:48:18 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 15:48:18 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 15:48:18 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 16:13:18 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+07-08-2025 16:13:20 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 16:13:20 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 16:13:20 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 16:13:20 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 16:13:20 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000024C9A71AA70>
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 19:13:20 GMT'), (b'Content-Length', b'679')])
+07-08-2025 16:13:20 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 16:13:20 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 16:13:20 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 16:14:04 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 16:14:04 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 16:14:04 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 16:14:04 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 16:14:04 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001B9DC45AA70>
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 19:14:04 GMT'), (b'Content-Length', b'679')])
+07-08-2025 16:14:04 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 16:14:04 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 16:14:04 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 16:20:06 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+07-08-2025 16:20:28 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 16:20:28 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 16:20:28 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 16:20:28 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 16:20:28 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000028C08CE6AD0>
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 19:20:28 GMT'), (b'Content-Length', b'679')])
+07-08-2025 16:20:28 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 16:20:28 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.

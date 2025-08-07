@@ -8,6 +8,8 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
+load_dotenv()  # Carrega variáveis de ambiente antes de importações locais
+
 from helpers_compartilhados.helpers import configurar_logging
 # CORREÇÃO: Importação atualizada para langchain-ollama
 from langchain_ollama import OllamaLLM
@@ -17,7 +19,6 @@ from app.core.cliente_waha import cliente_waha
 from app.core.gerenciador_contexto import gerenciador_contexto
 
 # --- Configuração Inicial ---
-load_dotenv()
 configurar_logging('log_bot')
 logger = logging.getLogger(__name__)
 

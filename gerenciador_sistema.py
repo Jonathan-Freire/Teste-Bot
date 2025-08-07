@@ -224,10 +224,28 @@ class GerenciadorWAHA:
                 "name": "default",
                 "start": True,
                 "config": {
+                    "metadata": {
+                        "user.id": "123",
+                        "user.email": "bot@exemplo.com"
+                    },
+                    "proxy": None,
+                    "debug": False,
+                    "noweb": {
+                        "store": {
+                            "enabled": True,
+                            "fullSync": False
+                        }
+                    },
                     "webhooks": [
                         {
                             "url": webhook_url,
-                            "events": ["message", "session.status"]
+                            "events": [
+                                "message",
+                                "session.status"
+                            ],
+                            "hmac": None,
+                            "retries": None,
+                            "customHeaders": None
                         }
                     ]
                 }

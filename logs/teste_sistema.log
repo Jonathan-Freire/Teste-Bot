@@ -1,0 +1,25 @@
+2025-08-07 10:24:50,831 - INFO - Módulo 'conexaodb' adicionado ao sys.path: C:\Robos\modulos\conexaodb
+2025-08-07 10:24:51,066 - INFO - Iniciando execução de query SELECT no banco de dados.
+2025-08-07 10:24:51,634 - INFO - 1 registros retornados do banco.
+2025-08-07 10:24:51,766 - INFO - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'me mostra os 3 produtos mais vendidos este mês' ---
+2025-08-07 10:24:51,767 - INFO - Iniciando roteamento de intenção do usuário.
+2025-08-07 10:24:55,178 - INFO - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'entidades': {'criterio_classificacao': 'mais_vendidos', 'periodo_tempo': 'este_mes', 'limite': 3}}
+2025-08-07 10:24:55,178 - INFO - Intenção identificada: buscar_produtos_classificados
+2025-08-07 10:24:55,179 - INFO - Executando manipulador para intenção: buscar_produtos_classificados
+2025-08-07 10:24:55,179 - INFO - Construindo query de ranking de produtos com critério: mais_vendidos
+2025-08-07 10:24:55,180 - INFO - Iniciando execução de query SELECT no banco de dados.
+2025-08-07 10:25:19,466 - INFO - 3 registros retornados do banco.
+2025-08-07 10:25:19,471 - INFO - Consulta executada com sucesso. 3 registros encontrados.
+2025-08-07 10:25:19,471 - INFO - Iniciando a sumarização dos resultados.
+2025-08-07 10:25:30,545 - INFO - Sumarização gerada com sucesso.
+2025-08-07 10:25:30,546 - INFO - Orquestração concluída com sucesso.
+2025-08-07 10:25:30,556 - INFO - Gerenciador de contexto inicializado. Timeout: 30min, Max mensagens: 10
+2025-08-07 10:25:30,557 - INFO - Nova sessão criada para usuário: teste_user_1
+2025-08-07 10:25:30,557 - INFO - Nova sessão criada para usuário: teste_user_2
+2025-08-07 10:25:30,584 - INFO - Cliente WAHA inicializado. Base URL: http://localhost:3000, Autenticação: ✅, Sessão: default
+2025-08-07 10:25:30,591 - INFO - Nova sessão criada para usuário: teste_user_fluxo_completo
+2025-08-07 10:25:30,591 - INFO - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'Pergunta atual: quais são os produtos mais caros que temos?' ---
+2025-08-07 10:25:30,592 - INFO - Iniciando roteamento de intenção do usuário.
+2025-08-07 10:25:33,845 - INFO - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'entidades': {'criterio_classificacao': 'mais_caro', 'limite': 10}, 'mensagem_esclarecimento': None}
+2025-08-07 10:25:33,845 - WARNING - Período obrigatório não fornecido para intenção: buscar_produtos_classificados
+2025-08-07 10:25:33,847 - INFO - Intenção identificada: necessita_esclarecimento

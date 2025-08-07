@@ -193,6 +193,56 @@ class GerenciadorWAHA:
             return response.status_code in [200, 401]  # 401 é OK se tiver autenticação
         except:
             return False
+
+    def criar_sessao(self, webhook_url: str) -> bool:
+        """
+        Cria uma sessão no WAHA configurando o webhook informado.
+
+        Args:
+            webhook_url: URL que receberá os eventos do WAHA.
+
+        Returns:
+            bool: True se a sessão for criada com sucesso.
+        """
+        try:
+            headers = {
+                "Content-Type": "application/json",
+                "X-Api-Key": self.api_key
+            }
+
+            # Tentar remover sessão existente
+            try:
+                requests.delete(
+                    "http://localhost:3000/api/sessions/default",
+                    headers=headers,
+                    timeout=5
+                )
+            except Exception:
+                pass
+
+            session_config = {
+                "name": "default",
+                "start": True,
+                "config": {
+                    "webhooks": [
+                        {
+                            "url": webhook_url,
+                            "events": ["message", "session.status"]
+                        }
+                    ]
+                }
+            }
+
+            response = requests.post(
+                "http://localhost:3000/api/sessions",
+                json=session_config,
+                headers=headers,
+                timeout=15
+            )
+            return response.status_code in [200, 201]
+        except Exception as e:
+            print_erro(f"Erro ao criar sessão WAHA: {e}")
+            return False
     
     def parar_container(self) -> bool:
         """
@@ -876,10 +926,15 @@ class GerenciadorSistema:
         if not self.ngrok_manager.url_publica:
             print_aviso("URL do ngrok não disponível")
             return False
-        
         webhook_url = f"{self.ngrok_manager.url_publica}/webhook/whatsapp"
-        print_info(f"Webhook configurado: {webhook_url}")
-        return True
+
+        if self.waha_manager.criar_sessao(webhook_url):
+            print_sucesso(f"Webhook configurado: {webhook_url}")
+            print_info("Basta acessar http://localhost:3000 e escanear o QR code")
+            return True
+
+        print_erro("Falha ao configurar webhook no WAHA")
+        return False
     
     async def _verificacao_final(self) -> bool:
         """Verificação final de todos os serviços."""

@@ -317,17 +317,23 @@ class ConfiguradorWebhookWAHA:
                 "Content-Type": "application/json",
                 "X-Api-Key": api_key_plain,
             }
-            
+
+            session_name = os.getenv("WHATSAPP_SESSION_NAME", "default")
+
             # Tentar parar sessão existente (ignorar erros)
             try:
-                requests.delete("http://localhost:3000/api/sessions/default", headers=headers, timeout=5)
+                requests.delete(
+                    f"http://localhost:3000/api/sessions/{session_name}",
+                    headers=headers,
+                    timeout=5,
+                )
                 time.sleep(2)  # Aguardar um pouco
             except:
                 pass
-            
+
             # Criar nova sessão com webhook
             session_config = {
-                "name": "default",
+                "name": session_name,
                 "start": True,
                 "config": {
                     "metadata": {
@@ -371,9 +377,9 @@ class ConfiguradorWebhookWAHA:
                 time.sleep(3)
                 try:
                     status_response = requests.get(
-                        "http://localhost:3000/api/sessions/default", 
-                        headers=headers, 
-                        timeout=5
+                        f"http://localhost:3000/api/sessions/{session_name}",
+                        headers=headers,
+                        timeout=5,
                     )
                     if status_response.status_code == 200:
                         status_data = status_response.json()

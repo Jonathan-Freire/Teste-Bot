@@ -99,23 +99,19 @@ class GerenciadorWAHA:
         # API key em hash (obrigatória) e chave em texto plano
         self.api_key_hash = os.getenv("WAHA_API_KEY")
         self.api_key_plain = os.getenv("WAHA_API_KEY_PLAIN")
-        if not self.api_key_hash:
+
+        # Gera automaticamente uma nova chave caso qualquer valor esteja ausente
+        if not self.api_key_hash or not self.api_key_plain:
             self.api_key_plain, self.api_key_hash = self._gerar_api_key()
             set_key(str(Path(".env")), "WAHA_API_KEY", self.api_key_hash)
-            os.environ["WAHA_API_KEY"] = self.api_key_hash
-            print_info(
-                f"API Key gerada. Guarde em local seguro: {self.api_key_plain}"
-            )
-        elif not self.api_key_plain:
-            self.api_key_plain = input(
-                "Digite a WAHA API Key em texto plano: "
-            ).strip()
-
-        # Garante que a chave em texto plano esteja disponível nas variáveis de ambiente
-        # e registrada no arquivo .env
-        if self.api_key_plain:
-            os.environ["WAHA_API_KEY_PLAIN"] = self.api_key_plain
             set_key(str(Path(".env")), "WAHA_API_KEY_PLAIN", self.api_key_plain)
+            print_info(
+                f"API Key gerada automaticamente. Guarde em local seguro: {self.api_key_plain}"
+            )
+
+        # Garante que ambas as versões estejam disponíveis nas variáveis de ambiente
+        os.environ["WAHA_API_KEY"] = self.api_key_hash
+        os.environ["WAHA_API_KEY_PLAIN"] = self.api_key_plain
 
         # Comando Docker corrigido
         self.comando_base = [

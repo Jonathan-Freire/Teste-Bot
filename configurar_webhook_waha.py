@@ -437,18 +437,21 @@ class ConfiguradorWebhookWAHA:
         
         # Verificar se já existe uma API key válida
         existing_hash = os.getenv("WAHA_API_KEY")
-        if existing_hash and existing_hash.startswith("sha512:") and len(existing_hash) > 20:
+        existing_plain = os.getenv("WAHA_API_KEY_PLAIN")
+
+        if existing_hash and existing_plain:
             print_info("API key existente encontrada no .env")
             self.waha_api_key_hash = existing_hash
-            self.waha_api_key_plain = input(
-                "Digite a API key em texto plano correspondente: "
-            ).strip()
+            self.waha_api_key_plain = existing_plain
         else:
             print_info("Gerando nova API key segura...")
             plain, hashed = self.gerar_api_key_segura()
             self.waha_api_key_plain = plain
             self.waha_api_key_hash = hashed
             self.atualizar_env("WAHA_API_KEY", hashed)
+            self.atualizar_env("WAHA_API_KEY_PLAIN", plain)
+            os.environ["WAHA_API_KEY"] = hashed
+            os.environ["WAHA_API_KEY_PLAIN"] = plain
             print_sucesso("Nova API key gerada e salva no .env")
             print_aviso(f"Guarde a chave em local seguro: {plain}")
         

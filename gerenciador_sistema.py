@@ -105,8 +105,9 @@ class GerenciadorWAHA:
             self.api_key_plain, self.api_key_hash = self._gerar_api_key()
             set_key(str(Path(".env")), "WAHA_API_KEY", self.api_key_hash)
             set_key(str(Path(".env")), "WAHA_API_KEY_PLAIN", self.api_key_plain)
+            print_info("API Key gerada automaticamente e salva no arquivo .env.")
             print_info(
-                f"API Key gerada automaticamente. Guarde em local seguro: {self.api_key_plain}"
+                "Copie a chave do campo WAHA_API_KEY_PLAIN e armazene em local seguro."
             )
 
         # Garante que ambas as versões estejam disponíveis nas variáveis de ambiente

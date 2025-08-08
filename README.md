@@ -1,5 +1,6 @@
 # Teste-Bot
 
+
 Projeto de automação para WhatsApp.
 
 ## Instalação

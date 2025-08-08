@@ -105,9 +105,20 @@ class GerenciadorWAHA:
             self.api_key_plain, self.api_key_hash = self._gerar_api_key()
             set_key(str(Path(".env")), "WAHA_API_KEY", self.api_key_hash)
             set_key(str(Path(".env")), "WAHA_API_KEY_PLAIN", self.api_key_plain)
-            print_info(
-                f"API Key gerada automaticamente. Guarde em local seguro: {self.api_key_plain}"
-            )
+
+            print_info("API Key gerada automaticamente e salva no arquivo .env.")
+
+            load_dotenv()
+            if (
+                os.getenv("WAHA_API_KEY") == self.api_key_hash
+                and os.getenv("WAHA_API_KEY_PLAIN") == self.api_key_plain
+            ):
+                print_sucesso(
+                    "API keys geradas automaticamente e salvas no .env"
+                )
+            else:
+                print_erro("Erro ao salvar API keys no .env")
+
 
         # Garante que ambas as versões estejam disponíveis nas variáveis de ambiente
         os.environ["WAHA_API_KEY"] = self.api_key_hash
@@ -243,6 +254,8 @@ class GerenciadorWAHA:
                 "X-Api-Key": self.api_key_plain,
             }
 
+            session_name = os.getenv("WHATSAPP_SESSION_NAME", "default")
+
             # Tentar remover sessão existente
             try:
                 requests.delete(
@@ -254,7 +267,7 @@ class GerenciadorWAHA:
                 pass
 
             session_config = {
-                "name": "default",
+                "name": session_name,
                 "start": True,
                 "config": {
                     "metadata": {

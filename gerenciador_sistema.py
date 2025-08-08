@@ -166,9 +166,20 @@ class GerenciadorWAHA:
                 stderr=subprocess.PIPE,
                 text=True
             )
-            
+
             print_info("Aguardando container inicializar...")
-            time.sleep(8)
+
+            # Aguarda o endpoint estar disponível antes de continuar
+            container_pronto = False
+            for _ in range(30):
+                if self.verificar_status():
+                    container_pronto = True
+                    break
+                time.sleep(2)
+
+            if not container_pronto:
+                print_erro("WAHA não respondeu no tempo esperado")
+                return False
             
             # Verificar se está funcionando
             if self.verificar_status():
@@ -957,6 +968,16 @@ class GerenciadorSistema:
         if not self.ngrok_manager.url_publica:
             print_aviso("URL do ngrok não disponível")
             return False
+        
+        # Garante que o WAHA está respondendo antes de criar a sessão
+        for _ in range(15):
+            if self.waha_manager.verificar_status():
+                break
+            await asyncio.sleep(2)
+        else:
+            print_erro("WAHA não respondeu ao configurar webhook")
+            return False
+
         webhook_url = f"{self.ngrok_manager.url_publica}/webhook/whatsapp"
 
         if self.waha_manager.criar_sessao(webhook_url):

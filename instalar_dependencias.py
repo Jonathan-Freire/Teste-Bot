@@ -67,6 +67,9 @@ def instalar_pip_packages():
         # Logging e monitoramento
         "structlog==23.2.0",
         "psutil==5.9.6",
+
+        # Pacote interno de exceções
+        "esperanca-excecao-robos @ git+https://github.com/empresa/esperanca-excecao-robos.git",
         
         # WhatsApp e QR Code
         "qrcode[pil]==7.4.2",
@@ -116,6 +119,7 @@ def verificar_instalacao():
         ("Requests", "import requests"),
         ("Docker SDK", "import docker"),
         ("QRCode", "import qrcode"),
+        ("Esperanca Excecao Robos", "import esperanca_excecao_robos"),
     ]
     
     sucessos = 0

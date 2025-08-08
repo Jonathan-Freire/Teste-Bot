@@ -49,3 +49,7 @@ mypy==1.7.1
 
 # === Monitoramento (opcional) ===
 psutil==5.9.6
+
+# === Pacotes Internos ===
+# Não disponível no PyPI. Instale a partir do repositório Git.
+esperanca-excecao-robos @ git+https://github.com/empresa/esperanca-excecao-robos.git

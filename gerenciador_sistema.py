@@ -135,6 +135,7 @@ class GerenciadorWAHA:
             "devlikeapro/waha:latest"
         ]
         self.processo = None
+        self.base_url = os.getenv("WAHA_BASE_URL", "http://localhost:3000")
         
     def _gerar_api_key(self) -> tuple[str, str]:
         """
@@ -232,7 +233,7 @@ class GerenciadorWAHA:
             <class 'bool'>
         """
         try:
-            response = requests.get("http://localhost:3000/api/sessions", timeout=5)
+            response = requests.get(f"{self.base_url}/api/sessions", timeout=5)
             return response.status_code in [200, 401]  # 401 é OK se tiver autenticação
         except:
             return False
@@ -258,7 +259,7 @@ class GerenciadorWAHA:
             # Tentar remover sessão existente
             try:
                 requests.delete(
-                    f"http://localhost:3000/api/sessions/{session_name}",
+                    f"{self.base_url}/api/sessions/default",
                     headers=headers,
                     timeout=5
                 )
@@ -297,7 +298,7 @@ class GerenciadorWAHA:
             }
 
             response = requests.post(
-                "http://localhost:3000/api/sessions",
+                f"{self.base_url}/api/sessions",
                 json=session_config,
                 headers=headers,
                 timeout=15
@@ -475,7 +476,10 @@ class MonitorSistema:
         """
         self.servicos = {
             "API": {"url": "http://localhost:8000", "endpoint": "/"},
-            "WAHA": {"url": "http://localhost:3000", "endpoint": "/api/sessions"},
+            "WAHA": {
+                "url": os.getenv("WAHA_BASE_URL", "http://localhost:3000"),
+                "endpoint": "/api/sessions"
+            },
             "Ollama": {"url": "http://localhost:11434", "endpoint": "/api/tags"},
             "Ngrok": {"url": "http://localhost:4040", "endpoint": "/api/tunnels"}
         }
@@ -747,7 +751,8 @@ from langchain_core.prompts import ChatPromptTemplate
     async def _testar_waha(self) -> bool:
         """Testa configuração WAHA."""
         try:
-            response = requests.get("http://localhost:3000/api/sessions", timeout=3)
+            base_url = os.getenv("WAHA_BASE_URL", "http://localhost:3000")
+            response = requests.get(f"{base_url}/api/sessions", timeout=3)
             return response.status_code in [200, 401]
         except:
             print_info("WAHA não está rodando (normal se não iniciado ainda)")
@@ -919,7 +924,7 @@ class GerenciadorSistema:
         
         print_titulo("🎉 SISTEMA COMPLETAMENTE INICIALIZADO!")
         print_info("Acesse: http://localhost:8000/docs")
-        print_info("WAHA: http://localhost:3000")
+        print_info(f"WAHA: {self.waha_manager.base_url}")
         print_info(f"Webhook: {self.ngrok_manager.url_publica}/webhook/whatsapp")
         
         # Manter rodando
@@ -1011,7 +1016,7 @@ class GerenciadorSistema:
 
         if self.waha_manager.criar_sessao(webhook_url):
             print_sucesso(f"Webhook configurado: {webhook_url}")
-            print_info("Basta acessar http://localhost:3000 e escanear o QR code")
+            print_info(f"Basta acessar {self.waha_manager.base_url} e escanear o QR code")
             return True
 
         print_erro("Falha ao configurar webhook no WAHA")

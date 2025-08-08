@@ -111,6 +111,12 @@ class GerenciadorWAHA:
                 "Digite a WAHA API Key em texto plano: "
             ).strip()
 
+        # Garante que a chave em texto plano esteja disponível nas variáveis de ambiente
+        # e registrada no arquivo .env
+        if self.api_key_plain:
+            os.environ["WAHA_API_KEY_PLAIN"] = self.api_key_plain
+            set_key(str(Path(".env")), "WAHA_API_KEY_PLAIN", self.api_key_plain)
+
         # Comando Docker corrigido
         self.comando_base = [
             "docker", "run", "-it", "--rm",
@@ -947,6 +953,7 @@ class GerenciadorSistema:
     async def _iniciar_api(self) -> bool:
         """Inicia a API FastAPI."""
         try:
+            load_dotenv()
             cmd = [
                 sys.executable, "-m", "uvicorn", "app.main:app",
                 "--host", "0.0.0.0", "--port", "8000", "--reload"

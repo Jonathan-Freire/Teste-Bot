@@ -248,7 +248,10 @@ async def lifespan(app: FastAPI):
     
     # Encerrar gerenciador de contexto
     await gerenciador_contexto.encerrar()
-    
+
+    # Encerrar cliente WAHA
+    await cliente_waha.close()
+
     # Limpar recursos
     app.state.llm = None
     logger.info("Recursos liberados com sucesso")

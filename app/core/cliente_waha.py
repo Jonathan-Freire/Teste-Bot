@@ -85,6 +85,13 @@ class ClienteWaha:
         self.temp_dir = self.config.temp_dir
         self.temp_dir.mkdir(exist_ok=True, parents=True)
 
+        # Cliente HTTP reutilizável
+        self._client = httpx.AsyncClient(
+            timeout=self.config.timeout,
+            headers=self.headers,
+            base_url=self.config.base_url,
+        )
+
         logger.info(
             f"Cliente WAHA inicializado. Base URL: {self.config.base_url}, "
             f"Autenticação: {'✅' if self.config.api_key else '❌'}, "
@@ -204,15 +211,9 @@ class ClienteWaha:
                     f"Request {method} {url} - Tentativa {tentativa}/{self.config.max_retries}"
                 )
 
-                async with httpx.AsyncClient() as client:
-                    if method.upper() == "GET":
-                        response = await client.get(url, **kwargs)
-                    elif method.upper() == "POST":
-                        response = await client.post(url, **kwargs)
-                    elif method.upper() == "DELETE":
-                        response = await client.delete(url, **kwargs)
-                    else:
-                        raise ValueError(f"Método HTTP não suportado: {method}")
+                response = await self._client.request(
+                    method.upper(), url, **kwargs
+                )
 
                 # Log da resposta
                 logger.debug(
@@ -795,6 +796,10 @@ class ClienteWaha:
             "temp_dir": str(self.temp_dir),
             "headers_count": len(self.headers),
         }
+
+    async def close(self) -> None:
+        """Encerra o cliente HTTP."""
+        await self._client.aclose()
 
 
 # Instância global otimizada do cliente

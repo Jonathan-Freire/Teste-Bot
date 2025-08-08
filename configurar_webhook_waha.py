@@ -317,17 +317,23 @@ class ConfiguradorWebhookWAHA:
                 "Content-Type": "application/json",
                 "X-Api-Key": api_key_plain,
             }
-            
+
+            session_name = os.getenv("WHATSAPP_SESSION_NAME", "default")
+
             # Tentar parar sessão existente (ignorar erros)
             try:
-                requests.delete("http://localhost:3000/api/sessions/default", headers=headers, timeout=5)
+                requests.delete(
+                    f"http://localhost:3000/api/sessions/{session_name}",
+                    headers=headers,
+                    timeout=5,
+                )
                 time.sleep(2)  # Aguardar um pouco
             except:
                 pass
-            
+
             # Criar nova sessão com webhook
             session_config = {
-                "name": "default",
+                "name": session_name,
                 "start": True,
                 "config": {
                     "metadata": {
@@ -371,9 +377,9 @@ class ConfiguradorWebhookWAHA:
                 time.sleep(3)
                 try:
                     status_response = requests.get(
-                        "http://localhost:3000/api/sessions/default", 
-                        headers=headers, 
-                        timeout=5
+                        f"http://localhost:3000/api/sessions/{session_name}",
+                        headers=headers,
+                        timeout=5,
                     )
                     if status_response.status_code == 200:
                         status_data = status_response.json()
@@ -452,7 +458,14 @@ class ConfiguradorWebhookWAHA:
             self.atualizar_env("WAHA_API_KEY_PLAIN", plain)
             os.environ["WAHA_API_KEY"] = hashed
             os.environ["WAHA_API_KEY_PLAIN"] = plain
-            print_sucesso("Nova API key gerada e salva no .env")
+            load_dotenv()
+            if (
+                os.getenv("WAHA_API_KEY") == hashed
+                and os.getenv("WAHA_API_KEY_PLAIN") == plain
+            ):
+                print_sucesso("Nova API key gerada e salva no .env")
+            else:
+                print_erro("Erro ao salvar API key no .env")
             print_aviso(f"Guarde a chave em local seguro: {plain}")
         
         # PASSO 3: Obter URL do ngrok
@@ -637,7 +650,17 @@ async def main():
                 print_titulo("GERANDO NOVA API KEY")
                 plain, hashed = configurador.gerar_api_key_segura()
                 configurador.atualizar_env("WAHA_API_KEY", hashed)
-                print_sucesso(f"Nova API key gerada: {plain[:20]}...")
+                configurador.atualizar_env("WAHA_API_KEY_PLAIN", plain)
+                os.environ["WAHA_API_KEY"] = hashed
+                os.environ["WAHA_API_KEY_PLAIN"] = plain
+                load_dotenv()
+                if (
+                    os.getenv("WAHA_API_KEY") == hashed
+                    and os.getenv("WAHA_API_KEY_PLAIN") == plain
+                ):
+                    print_sucesso(f"Nova API key gerada: {plain[:20]}...")
+                else:
+                    print_erro("Erro ao salvar API key no .env")
                 print_aviso("Guarde esta chave em local seguro")
             elif opcao == "4":
                 print_titulo("OBTENDO URL DO NGROK")

@@ -68,3 +68,209 @@
 07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - response_closed.started
 07-08-2025 16:20:28 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
 07-08-2025 16:20:28 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 17:04:25 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 17:04:25 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 17:04:25 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 17:04:25 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 17:04:25 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001250B787E80>
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 20:04:25 GMT'), (b'Content-Length', b'679')])
+07-08-2025 17:04:25 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 17:04:25 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 17:04:25 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 17:06:28 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 17:06:28 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 17:06:28 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 17:06:28 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 17:06:28 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002649FADAB30>
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 20:06:28 GMT'), (b'Content-Length', b'679')])
+07-08-2025 17:06:28 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 17:06:28 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 17:06:28 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 17:08:19 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - --- INÍCIO DA ORQUESTRAÇÃO PARA: 'quais os 5 produtos mais vendidos este mês?' ---
+07-08-2025 17:08:19 - INFO - app.agentes.agente_roteador - [obter_intencao] - Iniciando roteamento de intenção do usuário.
+07-08-2025 17:08:19 - DEBUG - app.agentes.agente_roteador - [obter_intencao] - Enviando para o LLM para extração: 'quais os 5 produtos mais vendidos este mês?'
+07-08-2025 17:08:19 - DEBUG - httpcore.connection - [atrace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 17:08:19 - DEBUG - httpcore.connection - [atrace] - connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001250B791090>
+07-08-2025 17:08:19 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.started request=<Request [b'POST']>
+07-08-2025 17:08:19 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.complete
+07-08-2025 17:08:19 - DEBUG - httpcore.http11 - [atrace] - send_request_body.started request=<Request [b'POST']>
+07-08-2025 17:08:19 - DEBUG - httpcore.http11 - [atrace] - send_request_body.complete
+07-08-2025 17:08:19 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.started request=<Request [b'POST']>
+07-08-2025 17:08:27 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Thu, 07 Aug 2025 20:08:27 GMT'), (b'Transfer-Encoding', b'chunked')])
+07-08-2025 17:08:27 - INFO - httpx - [_send_single_request] - HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+07-08-2025 17:08:27 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.started request=<Request [b'POST']>
+07-08-2025 17:08:28 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.complete
+07-08-2025 17:08:28 - DEBUG - httpcore.http11 - [atrace] - response_closed.started
+07-08-2025 17:08:28 - DEBUG - httpcore.http11 - [atrace] - response_closed.complete
+07-08-2025 17:08:28 - INFO - app.agentes.agente_roteador - [obter_intencao] - Dicionário extraído com sucesso: {'intencao': 'buscar_produtos_classificados', 'entidades': {'criterio_classificacao': 'mais_vendidos', 'periodo_tempo': 'este_mes', 'limite': 10}}
+07-08-2025 17:08:28 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - Intenção identificada: buscar_produtos_classificados
+07-08-2025 17:08:28 - DEBUG - app.core.orquestrador - [gerenciar_consulta_usuario] - Entidades extraídas: {'criterio_classificacao': 'mais_vendidos', 'periodo_tempo': 'este_mes', 'limite': 10}
+07-08-2025 17:08:28 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - Executando manipulador para intenção: buscar_produtos_classificados
+07-08-2025 17:08:28 - INFO - app.ferramentas.ferramentas_sql - [construir_query_produtos_classificados] - Construindo query de ranking de produtos com critério: mais_vendidos
+07-08-2025 17:08:28 - DEBUG - app.ferramentas.ferramentas_sql - [_construir_clausula_data_otimizada] - Período 'este_mes' convertido para range: 2025-08-01 00:00:00 até 2025-09-01 00:00:00
+07-08-2025 17:08:28 - DEBUG - app.core.orquestrador - [gerenciar_consulta_usuario] - Query SQL gerada: 
+        SELECT /*+ FIRST_ROWS(10) INDEX_COMBINE(P) */ 
+               P.CODPROD, P.DESCRICAO, P.PVENDA, VENDAS.TOTAL_VENDIDO
+        FROM PCPRODUT P
+        INNER JOIN (
+            SELECT /*+ INDEX(I IDX_PCPEDI_CODPROD) INDEX(C IDX_PCPEDC_DATA) */
+                   I.CODPROD, COUNT(*) AS TOTAL_VENDIDO
+            FROM PCPEDI I
+            INNER JOIN PCPEDC C ON I.NUMPED = C.NUMPED
+            WHERE C.DATA >= :data_inicio AND C.DATA < :data_fim
+            GROUP BY I.CODPROD
+        ) VENDAS ON P.CODPROD = VENDAS.CODPROD
+        WHERE P.DTEXCLUSAO IS NULL
+        ORDER BY TOTAL_VENDIDO DESC
+        FETCH FIRST :limite ROWS ONLY
+    
+07-08-2025 17:08:28 - DEBUG - app.core.orquestrador - [gerenciar_consulta_usuario] - Parâmetros: {'limite': 10, 'data_inicio': datetime.datetime(2025, 8, 1, 0, 0), 'data_fim': datetime.datetime(2025, 9, 1, 0, 0)}
+07-08-2025 17:08:28 - INFO - app.db.consultas - [executar_consulta_selecao] - Iniciando execução de query SELECT no banco de dados.
+07-08-2025 17:08:28 - DEBUG - app.db.consultas - [_gerenciar_conexao_bd] - Conexão com o banco 'prod' estabelecida com sucesso.
+07-08-2025 17:08:28 - DEBUG - app.db.consultas - [_executar_sincronamente] - Executando SQL: 
+        SELECT /*+ FIRST_ROWS(10) INDEX_COMBINE(P) */ 
+               P.CODPROD, P.DESCRICAO, P.PVENDA, VENDAS.TOTAL_VENDIDO
+        FROM PCPRODUT P
+        INNER JOIN (
+            SELECT /*+ INDEX(I IDX_PCPEDI_CODPROD) INDEX(C IDX_PCPEDC_DATA) */
+                   I.CODPROD, COUNT(*) AS TOTAL_VENDIDO
+            FROM PCPEDI I
+            INNER JOIN PCPEDC C ON I.NUMPED = C.NUMPED
+            WHERE C.DATA >= :data_inicio AND C.DATA < :data_fim
+            GROUP BY I.CODPROD
+        ) VENDAS ON P.CODPROD = VENDAS.CODPROD
+        WHERE P.DTEXCLUSAO IS NULL
+        ORDER BY TOTAL_VENDIDO DESC
+        FETCH FIRST :limite ROWS ONLY
+     com parâmetros: {'limite': 10, 'data_inicio': datetime.datetime(2025, 8, 1, 0, 0), 'data_fim': datetime.datetime(2025, 9, 1, 0, 0)}
+07-08-2025 17:08:58 - INFO - app.db.consultas - [_executar_sincronamente] - 10 registros retornados do banco.
+07-08-2025 17:08:58 - DEBUG - app.db.consultas - [_gerenciar_conexao_bd] - Conexão com o banco de dados fechada.
+07-08-2025 17:08:58 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - Consulta executada com sucesso. 10 registros encontrados.
+07-08-2025 17:08:58 - INFO - app.agentes.agente_sumarizador - [sumarizar_resultados] - Iniciando a sumarização dos resultados.
+07-08-2025 17:08:58 - DEBUG - app.agentes.agente_sumarizador - [sumarizar_resultados] - Enviando 10 registros para sumarização.
+07-08-2025 17:08:58 - DEBUG - httpcore.connection - [atrace] - close.started
+07-08-2025 17:08:58 - DEBUG - httpcore.connection - [atrace] - close.complete
+07-08-2025 17:08:58 - DEBUG - httpcore.connection - [atrace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 17:08:58 - DEBUG - httpcore.connection - [atrace] - connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001250B791C30>
+07-08-2025 17:08:58 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.started request=<Request [b'POST']>
+07-08-2025 17:08:58 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.complete
+07-08-2025 17:08:58 - DEBUG - httpcore.http11 - [atrace] - send_request_body.started request=<Request [b'POST']>
+07-08-2025 17:08:58 - DEBUG - httpcore.http11 - [atrace] - send_request_body.complete
+07-08-2025 17:08:58 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.started request=<Request [b'POST']>
+07-08-2025 17:08:59 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Thu, 07 Aug 2025 20:08:59 GMT'), (b'Transfer-Encoding', b'chunked')])
+07-08-2025 17:08:59 - INFO - httpx - [_send_single_request] - HTTP Request: POST http://localhost:11434/api/generate "HTTP/1.1 200 OK"
+07-08-2025 17:08:59 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.started request=<Request [b'POST']>
+07-08-2025 17:09:05 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.complete
+07-08-2025 17:09:05 - DEBUG - httpcore.http11 - [atrace] - response_closed.started
+07-08-2025 17:09:05 - DEBUG - httpcore.http11 - [atrace] - response_closed.complete
+07-08-2025 17:09:05 - INFO - app.agentes.agente_sumarizador - [sumarizar_resultados] - Sumarização gerada com sucesso.
+07-08-2025 17:09:05 - INFO - app.core.orquestrador - [gerenciar_consulta_usuario] - Orquestração concluída com sucesso.
+07-08-2025 17:09:59 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+07-08-2025 17:09:59 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+07-08-2025 17:10:45 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 17:10:45 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 17:10:45 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 17:10:45 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 17:10:45 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002327995AB00>
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 20:10:45 GMT'), (b'Content-Length', b'679')])
+07-08-2025 17:10:45 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 17:10:45 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 17:10:45 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 17:30:33 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 17:30:33 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 17:30:33 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 17:30:33 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 17:30:33 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000027ACE03AB00>
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Thu, 07 Aug 2025 20:30:33 GMT'), (b'Content-Length', b'679')])
+07-08-2025 17:30:33 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 17:30:33 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 17:30:33 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 21:10:03 - INFO - root - [configurar_logging] - Logging configurado. Os logs serão salvos em: logs\log_bot.log
+07-08-2025 21:10:03 - INFO - app.main - [lifespan] - Iniciando a API e configurando recursos...
+07-08-2025 21:10:03 - INFO - app.main - [lifespan] - Conectando ao LLM: llama3.1 em http://localhost:11434
+07-08-2025 21:10:03 - DEBUG - httpcore.connection - [trace] - connect_tcp.started host='localhost' port=11434 local_address=None timeout=120.0 socket_options=None
+07-08-2025 21:10:03 - DEBUG - httpcore.connection - [trace] - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000269BAF1A890>
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - send_request_headers.started request=<Request [b'GET']>
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - send_request_headers.complete
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - send_request_body.started request=<Request [b'GET']>
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - send_request_body.complete
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.started request=<Request [b'GET']>
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 08 Aug 2025 00:10:03 GMT'), (b'Content-Length', b'679')])
+07-08-2025 21:10:03 - INFO - httpx - [_send_single_request] - HTTP Request: GET http://localhost:11434/api/tags "HTTP/1.1 200 OK"
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - receive_response_body.started request=<Request [b'GET']>
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - receive_response_body.complete
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - response_closed.started
+07-08-2025 21:10:03 - DEBUG - httpcore.http11 - [trace] - response_closed.complete
+07-08-2025 21:10:03 - INFO - app.main - [lifespan] - Instância do LLM criada e pronta para uso.
+07-08-2025 21:12:44 - INFO - app.core.cliente_waha - [iniciar_sessao] - Iniciando sessão 'default' com webhook: https://7afd48f1292c.ngrok-free.app
+07-08-2025 21:12:44 - DEBUG - app.core.cliente_waha - [_fazer_request_com_retry] - Request DELETE http://localhost:3000/api/sessions/default - Tentativa 1/3
+07-08-2025 21:12:44 - DEBUG - httpcore.connection - [atrace] - connect_tcp.started host='localhost' port=3000 local_address=None timeout=30 socket_options=None
+07-08-2025 21:12:45 - DEBUG - httpcore.connection - [atrace] - connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x00000269BAFC5330>
+07-08-2025 21:12:45 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.started request=<Request [b'DELETE']>
+07-08-2025 21:12:45 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.complete
+07-08-2025 21:12:45 - DEBUG - httpcore.http11 - [atrace] - send_request_body.started request=<Request [b'DELETE']>
+07-08-2025 21:12:45 - DEBUG - httpcore.http11 - [atrace] - send_request_body.complete
+07-08-2025 21:12:45 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.started request=<Request [b'DELETE']>
+07-08-2025 21:12:45 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 401, b'Unauthorized', [(b'X-Powered-By', b'Express'), (b'Access-Control-Allow-Origin', b'*'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Content-Length', b'43'), (b'ETag', b'W/"2b-dGnJzt6gv1nJjX6DJ9RztDWptng"'), (b'Date', b'Fri, 08 Aug 2025 00:12:45 GMT'), (b'Connection', b'keep-alive'), (b'Keep-Alive', b'timeout=5')])
+07-08-2025 21:12:45 - INFO - httpx - [_send_single_request] - HTTP Request: DELETE http://localhost:3000/api/sessions/default "HTTP/1.1 401 Unauthorized"
+07-08-2025 21:12:45 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.started request=<Request [b'DELETE']>
+07-08-2025 21:14:41 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.complete
+07-08-2025 21:14:41 - DEBUG - httpcore.http11 - [atrace] - response_closed.started
+07-08-2025 21:14:41 - DEBUG - httpcore.http11 - [atrace] - response_closed.complete
+07-08-2025 21:14:41 - DEBUG - httpcore.connection - [atrace] - close.started
+07-08-2025 21:14:41 - DEBUG - httpcore.connection - [atrace] - close.complete
+07-08-2025 21:14:41 - DEBUG - app.core.cliente_waha - [_fazer_request_com_retry] - Response: 401 - Unauthorized
+07-08-2025 21:14:41 - WARNING - app.core.cliente_waha - [parar_sessao] - Resposta inesperada ao parar sessão: 401
+07-08-2025 21:14:44 - DEBUG - app.core.cliente_waha - [_fazer_request_com_retry] - Request POST http://localhost:3000/api/sessions - Tentativa 1/3
+07-08-2025 21:14:44 - DEBUG - httpcore.connection - [atrace] - connect_tcp.started host='localhost' port=3000 local_address=None timeout=30 socket_options=None
+07-08-2025 21:14:44 - DEBUG - httpcore.connection - [atrace] - connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x00000269BAFC5330>
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.started request=<Request [b'POST']>
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - send_request_headers.complete
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - send_request_body.started request=<Request [b'POST']>
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - send_request_body.complete
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.started request=<Request [b'POST']>
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - receive_response_headers.complete return_value=(b'HTTP/1.1', 401, b'Unauthorized', [(b'X-Powered-By', b'Express'), (b'Access-Control-Allow-Origin', b'*'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Content-Length', b'43'), (b'ETag', b'W/"2b-dGnJzt6gv1nJjX6DJ9RztDWptng"'), (b'Date', b'Fri, 08 Aug 2025 00:14:44 GMT'), (b'Connection', b'keep-alive'), (b'Keep-Alive', b'timeout=5')])
+07-08-2025 21:14:44 - INFO - httpx - [_send_single_request] - HTTP Request: POST http://localhost:3000/api/sessions "HTTP/1.1 401 Unauthorized"
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.started request=<Request [b'POST']>
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - receive_response_body.complete
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - response_closed.started
+07-08-2025 21:14:44 - DEBUG - httpcore.http11 - [atrace] - response_closed.complete
+07-08-2025 21:14:44 - DEBUG - httpcore.connection - [atrace] - close.started
+07-08-2025 21:14:44 - DEBUG - httpcore.connection - [atrace] - close.complete
+07-08-2025 21:14:44 - DEBUG - app.core.cliente_waha - [_fazer_request_com_retry] - Response: 401 - Unauthorized
+07-08-2025 21:14:44 - ERROR - app.core.cliente_waha - [iniciar_sessao] - Erro ao iniciar sessão: 401 - {"message":"Unauthorized","statusCode":401}
+07-08-2025 21:14:52 - INFO - app.main - [lifespan] - Encerrando a API e limpando recursos...
+07-08-2025 21:14:52 - INFO - app.core.gerenciador_contexto - [encerrar] - Task de limpeza automática encerrada
+07-08-2025 21:14:52 - INFO - app.main - [lifespan] - Recursos liberados com sucesso

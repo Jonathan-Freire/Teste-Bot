@@ -31,7 +31,7 @@ class ConfiguracaoWaha:
 
     Attributes:
         base_url: URL base do serviço WAHA.
-        api_key: Chave de API para autenticação.
+        api_key: Chave de API em texto plano para autenticação.
         session_name: Nome da sessão WhatsApp.
         timeout: Timeout para requests HTTP.
         max_retries: Número máximo de tentativas.
@@ -100,8 +100,8 @@ class ClienteWaha:
         base_url = os.getenv("WAHA_BASE_URL", "http://localhost:3000")
         session_name = os.getenv("WHATSAPP_SESSION_NAME", "default")
 
-        # Carregar API key diretamente do .env
-        api_key = os.getenv("WAHA_API_KEY", "")
+        # Chave de API deve ser fornecida em texto plano
+        api_key = os.getenv("WAHA_API_KEY_PLAIN", "")
 
         self.config = ConfiguracaoWaha(
             base_url=base_url.rstrip("/"),  # Remove trailing slash
@@ -132,7 +132,9 @@ class ClienteWaha:
             raise ValueError("Timeout deve ser maior que 0")
 
         if not self.config.api_key or len(self.config.api_key) < 8:
-            raise ValueError("WAHA_API_KEY deve ter pelo menos 8 caracteres")
+            raise ValueError(
+                "WAHA_API_KEY_PLAIN deve ter pelo menos 8 caracteres"
+            )
 
     def _configurar_headers(self):
         """

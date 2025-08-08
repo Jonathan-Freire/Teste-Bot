@@ -80,7 +80,8 @@ class GerenciadorWAHA:
     Attributes:
         comando_base: Lista com o comando Docker correto.
         processo: Processo em execução do container.
-        api_key: API key configurada para o WAHA.
+        api_key_hash: Hash da API key configurada para o WAHA.
+        api_key_plain: Chave em texto plano usada nas requisições.
     """
     
     def __init__(self):
@@ -95,21 +96,26 @@ class GerenciadorWAHA:
         # Carrega variáveis do .env
         load_dotenv()
 
-        # API key do .env ou gerar uma nova
-        self.api_key = os.getenv("WAHA_API_KEY")
-        self.api_key_raw = os.getenv("WAHA_API_KEY_RAW")
-        if not self.api_key or not self.api_key_raw:
-            self.api_key_raw, self.api_key = self._gerar_api_key()
-            set_key(str(Path(".env")), "WAHA_API_KEY", self.api_key)
-            set_key(str(Path(".env")), "WAHA_API_KEY_RAW", self.api_key_raw)
-            os.environ["WAHA_API_KEY"] = self.api_key
-            os.environ["WAHA_API_KEY_RAW"] = self.api_key_raw
+        # API key em hash (obrigatória) e chave em texto plano
+        self.api_key_hash = os.getenv("WAHA_API_KEY")
+        self.api_key_plain = os.getenv("WAHA_API_KEY_PLAIN")
+        if not self.api_key_hash:
+            self.api_key_plain, self.api_key_hash = self._gerar_api_key()
+            set_key(str(Path(".env")), "WAHA_API_KEY", self.api_key_hash)
+            os.environ["WAHA_API_KEY"] = self.api_key_hash
+            print_info(
+                f"API Key gerada. Guarde em local seguro: {self.api_key_plain}"
+            )
+        elif not self.api_key_plain:
+            self.api_key_plain = input(
+                "Digite a WAHA API Key em texto plano: "
+            ).strip()
 
         # Comando Docker corrigido
         self.comando_base = [
             "docker", "run", "-it", "--rm",
             "-p", "127.0.0.1:3000:3000",
-            "-e", f"WAHA_API_KEY={self.api_key}",
+            "-e", f"WAHA_API_KEY={self.api_key_hash}",
             "-e", "WHATSAPP_DEFAULT_ENGINE=WEBJS",
             "-e", "WAHA_PRINT_QR=true",
             "--name", "waha-bot",
@@ -189,7 +195,7 @@ class GerenciadorWAHA:
             # Verificar se está funcionando
             if self.verificar_status():
                 print_sucesso("WAHA iniciado com sucesso!")
-                print_info(f"API Key: {self.api_key}")
+                print_info(f"API Key hash: {self.api_key_hash}")
                 return True
             else:
                 print_erro("WAHA não conseguiu inicializar adequadamente")
@@ -231,7 +237,7 @@ class GerenciadorWAHA:
         try:
             headers = {
                 "Content-Type": "application/json",
-                "X-Api-Key": self.api_key_raw
+                "X-Api-Key": self.api_key_plain,
             }
 
             # Tentar remover sessão existente

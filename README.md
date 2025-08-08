@@ -1,8 +1,26 @@
 # Teste-Bot
 
-Antes de iniciar `app/main.py`, defina as variáveis `WAHA_API_KEY` e `WAHA_API_KEY_PLAIN` no arquivo `.env`.
 
-- `WAHA_API_KEY` deve conter o hash SHA512 da chave.
-- `WAHA_API_KEY_PLAIN` deve conter a chave em texto plano correspondente.
+Projeto de automação para WhatsApp.
 
-Você pode utilizar `configurar_webhook_waha.py` ou `gerenciador_sistema.py` para gerar e salvar automaticamente essas chaves.
+## Instalação
+
+1. Crie e ative um ambiente virtual com Python 3.10+.
+2. Execute o instalador para instalar todas as dependências:
+
+   ```bash
+   python instalar_dependencias.py
+   ```
+
+   Ou instale manualmente via `pip install -r requirements.txt`.
+
+### Pacote `esperanca-excecao-robos`
+
+Este projeto depende do pacote `esperanca-excecao-robos`, utilizado para padronizar exceções dos robôs. O pacote **não está disponível no PyPI**. Obtenha-o no repositório interno e instale manualmente:
+
+```bash
+pip install git+https://github.com/empresa/esperanca-excecao-robos.git
+```
+
+Substitua a URL pelo caminho correto, caso o repositório esteja hospedado em outro lugar.
+

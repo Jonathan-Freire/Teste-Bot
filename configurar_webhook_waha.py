@@ -83,7 +83,8 @@ class ConfiguradorWebhookWAHA:
             .env
         """
         self.env_path = Path(".env")
-        self.waha_api_key = None
+        self.waha_api_key_plain = None
+        self.waha_api_key_hash = None
         self.ngrok_url = None
         self.webhook_url = None
         
@@ -91,26 +92,29 @@ class ConfiguradorWebhookWAHA:
         if self.env_path.exists():
             load_dotenv()
     
-    def gerar_api_key_segura(self) -> str:
+    def gerar_api_key_segura(self) -> tuple[str, str]:
         """
-        Gera uma API key segura no formato SHA512.
-        
+        Gera uma API key segura e seu hash SHA512.
+
         Returns:
-            str: API key no formato sha512:hash
-            
+            tuple[str, str]: Tupla contendo a chave em texto plano e o hash
+            no formato ``sha512:<hash>``.
+
         Examples:
             >>> config = ConfiguradorWebhookWAHA()
-            >>> key = config.gerar_api_key_segura()
-            >>> print(key.startswith("sha512:"))
+            >>> plain, hashed = config.gerar_api_key_segura()
+            >>> plain != hashed and hashed.startswith("sha512:")
             True
         """
-        # Gerar string aleatória segura
-        random_string = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
-        
+        # Gerar string aleatória segura (texto plano)
+        random_string = ''.join(
+            secrets.choice(string.ascii_letters + string.digits) for _ in range(64)
+        )
+
         # Criar hash SHA512
         sha512_hash = hashlib.sha512(random_string.encode()).hexdigest()
-        
-        return f"sha512:{sha512_hash}"
+
+        return random_string, f"sha512:{sha512_hash}"
     
     def atualizar_env(self, chave: str, valor: str):
         """
@@ -288,12 +292,12 @@ class ConfiguradorWebhookWAHA:
             print_erro(f"Erro ao verificar WAHA: {e}")
             return False
     
-    def configurar_webhook_no_waha(self, api_key: str, webhook_url: str) -> bool:
+    def configurar_webhook_no_waha(self, api_key_plain: str, webhook_url: str) -> bool:
         """
         Configura o webhook no WAHA corretamente.
-        
+
         Args:
-            api_key: API key do WAHA
+            api_key_plain: API key em texto plano
             webhook_url: URL do webhook
             
         Returns:
@@ -311,7 +315,7 @@ class ConfiguradorWebhookWAHA:
             # Primeiro, parar sessão existente se houver
             headers = {
                 "Content-Type": "application/json",
-                "X-Api-Key": api_key
+                "X-Api-Key": api_key_plain,
             }
             
             # Tentar parar sessão existente (ignorar erros)
@@ -432,15 +436,21 @@ class ConfiguradorWebhookWAHA:
         print_colorido("\n🔑 PASSO 2: Configurando API key", Cores.NEGRITO)
         
         # Verificar se já existe uma API key válida
-        existing_key = os.getenv("WAHA_API_KEY")
-        if existing_key and existing_key.startswith("sha512:") and len(existing_key) > 20:
+        existing_hash = os.getenv("WAHA_API_KEY")
+        if existing_hash and existing_hash.startswith("sha512:") and len(existing_hash) > 20:
             print_info("API key existente encontrada no .env")
-            self.waha_api_key = existing_key
+            self.waha_api_key_hash = existing_hash
+            self.waha_api_key_plain = input(
+                "Digite a API key em texto plano correspondente: "
+            ).strip()
         else:
             print_info("Gerando nova API key segura...")
-            self.waha_api_key = self.gerar_api_key_segura()
-            self.atualizar_env("WAHA_API_KEY", self.waha_api_key)
+            plain, hashed = self.gerar_api_key_segura()
+            self.waha_api_key_plain = plain
+            self.waha_api_key_hash = hashed
+            self.atualizar_env("WAHA_API_KEY", hashed)
             print_sucesso("Nova API key gerada e salva no .env")
+            print_aviso(f"Guarde a chave em local seguro: {plain}")
         
         # PASSO 3: Obter URL do ngrok
         print_colorido("\n🌐 PASSO 3: Obtendo URL do ngrok", Cores.NEGRITO)
@@ -473,7 +483,9 @@ class ConfiguradorWebhookWAHA:
         # PASSO 5: Configurar webhook no WAHA
         print_colorido("\n⚙️  PASSO 5: Configurando webhook no WAHA", Cores.NEGRITO)
         
-        config_ok = self.configurar_webhook_no_waha(self.waha_api_key, self.webhook_url)
+        config_ok = self.configurar_webhook_no_waha(
+            self.waha_api_key_plain, self.webhook_url
+        )
         if not config_ok:
             print_erro("Falha ao configurar webhook no WAHA")
             return
@@ -482,7 +494,7 @@ class ConfiguradorWebhookWAHA:
         print_colorido("\n✅ CONFIGURAÇÃO CONCLUÍDA COM SUCESSO!", Cores.NEGRITO + Cores.VERDE)
         print()
         print_colorido("📋 RESUMO DA CONFIGURAÇÃO:", Cores.NEGRITO)
-        print(f"   🔑 API Key: {self.waha_api_key[:20]}...")
+        print(f"   🔑 API Key: {self.waha_api_key_plain[:20]}...")
         print(f"   🌐 Ngrok URL: {self.ngrok_url}")
         print(f"   🔗 Webhook: {self.webhook_url}")
         print(f"   📄 Arquivo .env: Atualizado")
@@ -620,9 +632,10 @@ async def main():
                 await configurador.diagnostico_problemas()
             elif opcao == "3":
                 print_titulo("GERANDO NOVA API KEY")
-                nova_key = configurador.gerar_api_key_segura()
-                configurador.atualizar_env("WAHA_API_KEY", nova_key)
-                print_sucesso(f"Nova API key gerada: {nova_key[:20]}...")
+                plain, hashed = configurador.gerar_api_key_segura()
+                configurador.atualizar_env("WAHA_API_KEY", hashed)
+                print_sucesso(f"Nova API key gerada: {plain[:20]}...")
+                print_aviso("Guarde esta chave em local seguro")
             elif opcao == "4":
                 print_titulo("OBTENDO URL DO NGROK")
                 url = configurador.obter_ngrok_url()

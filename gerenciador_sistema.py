@@ -686,15 +686,17 @@ class TestadorSistema:
         load_dotenv()
         
         vars_obrigatorias = [
-            'OLLAMA_BASE_URL', 'LLM_MODEL', 'WAHA_BASE_URL'
+            'OLLAMA_BASE_URL', 'LLM_MODEL', 'WAHA_BASE_URL',
+            'WAHA_API_KEY_PLAIN', 'WAHA_API_KEY'
         ]
-        
+
         faltando = [var for var in vars_obrigatorias if not os.getenv(var)]
-        
+
         if faltando:
-            print_aviso(f"Variáveis faltando: {', '.join(faltando)}")
+            for var in faltando:
+                print_aviso(f"Variável de ambiente obrigatória faltando: {var}")
             return False
-        
+
         return True
     
     async def _testar_ollama(self) -> bool:

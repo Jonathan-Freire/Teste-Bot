@@ -97,10 +97,13 @@ class GerenciadorWAHA:
 
         # API key do .env ou gerar uma nova
         self.api_key = os.getenv("WAHA_API_KEY")
-        if not self.api_key:
-            self.api_key = self._gerar_api_key()
+        self.api_key_raw = os.getenv("WAHA_API_KEY_RAW")
+        if not self.api_key or not self.api_key_raw:
+            self.api_key_raw, self.api_key = self._gerar_api_key()
             set_key(str(Path(".env")), "WAHA_API_KEY", self.api_key)
+            set_key(str(Path(".env")), "WAHA_API_KEY_RAW", self.api_key_raw)
             os.environ["WAHA_API_KEY"] = self.api_key
+            os.environ["WAHA_API_KEY_RAW"] = self.api_key_raw
 
         # Comando Docker corrigido
         self.comando_base = [
@@ -114,23 +117,25 @@ class GerenciadorWAHA:
         ]
         self.processo = None
         
-    def _gerar_api_key(self) -> str:
+    def _gerar_api_key(self) -> tuple[str, str]:
         """
         Gera uma API key segura para o WAHA.
-        
+
         Returns:
-            str: API key no formato sha512.
-            
+            Tuple[str, str]: A tupla contendo a versão original da chave
+            e sua versão hash (``sha512``).
+
         Examples:
             >>> waha = GerenciadorWAHA()
-            >>> key = waha._gerar_api_key()
-            >>> print(key.startswith("sha512:"))
+            >>> raw, hashed = waha._gerar_api_key()
+            >>> len(raw) == 32 and hashed.startswith("sha512:")
             True
         """
         import hashlib
         chave_raw = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
         hash_sha512 = hashlib.sha512(chave_raw.encode()).hexdigest()
-        return f"sha512:{hash_sha512}"
+        chave_hash = f"sha512:{hash_sha512}"
+        return chave_raw, chave_hash
     
     def iniciar_container(self) -> bool:
         """
@@ -215,7 +220,7 @@ class GerenciadorWAHA:
         try:
             headers = {
                 "Content-Type": "application/json",
-                "X-Api-Key": self.api_key
+                "X-Api-Key": self.api_key_raw
             }
 
             # Tentar remover sessão existente

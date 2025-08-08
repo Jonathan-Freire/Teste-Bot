@@ -252,10 +252,12 @@ class GerenciadorWAHA:
                 "X-Api-Key": self.api_key_plain,
             }
 
+            session_name = os.getenv("WHATSAPP_SESSION_NAME", "default")
+
             # Tentar remover sessão existente
             try:
                 requests.delete(
-                    "http://localhost:3000/api/sessions/default",
+                    f"http://localhost:3000/api/sessions/{session_name}",
                     headers=headers,
                     timeout=5
                 )
@@ -263,7 +265,7 @@ class GerenciadorWAHA:
                 pass
 
             session_config = {
-                "name": "default",
+                "name": session_name,
                 "start": True,
                 "config": {
                     "metadata": {

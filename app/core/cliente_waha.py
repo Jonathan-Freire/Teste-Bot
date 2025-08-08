@@ -10,7 +10,6 @@ Versão 4.0: Implementação completa com todos os métodos necessários.
 """
 
 import asyncio
-import hashlib
 import logging
 import os
 import base64
@@ -96,15 +95,13 @@ class ClienteWaha:
         """
         Carrega configurações do ambiente com validação.
 
-        Carrega e valida todas as configurações necessárias,
-        incluindo tratamento especial para diferentes formatos de API key.
+        Carrega e valida todas as configurações necessárias.
         """
         base_url = os.getenv("WAHA_BASE_URL", "http://localhost:3000")
         session_name = os.getenv("WHATSAPP_SESSION_NAME", "default")
 
-        # Tratamento inteligente da API key
-        api_key_raw = os.getenv("WAHA_API_KEY", "")
-        api_key = self._processar_api_key(api_key_raw)
+        # Carregar API key diretamente do .env
+        api_key = os.getenv("WAHA_API_KEY", "")
 
         self.config = ConfiguracaoWaha(
             base_url=base_url.rstrip("/"),  # Remove trailing slash
@@ -117,43 +114,6 @@ class ClienteWaha:
 
         # Validar configurações
         self._validar_configuracoes()
-
-    def _processar_api_key(self, api_key_raw: str) -> str:
-        """
-        Processa a API key para diferentes formatos aceitos pelo WAHA.
-
-        Args:
-            api_key_raw: API key bruta do arquivo .env.
-
-        Returns:
-            str: API key processada ou vazia se inválida.
-
-        Examples:
-            >>> cliente = ClienteWaha()
-            >>> key = cliente._processar_api_key("minha_chave_secreta")
-            >>> print(key.startswith("sha512:"))
-            True
-        """
-        if not api_key_raw or api_key_raw in [
-            "",
-            "sua_api_key_aqui",
-            "your_api_key_here",
-        ]:
-            return ""
-
-        # Se já está no formato correto, usar como está
-        if api_key_raw.startswith(("sha512:", "sha256:", "md5:")):
-            return api_key_raw
-
-        # Se não está no formato correto, assumir que é uma chave raw e converter para SHA512
-        if len(api_key_raw) >= 8:  # API key mínima
-            sha512_hash = hashlib.sha512(api_key_raw.encode()).hexdigest()
-            return f"sha512:{sha512_hash}"
-
-        logger.warning(
-            f"API key muito curta ou inválida: {len(api_key_raw)} caracteres"
-        )
-        return ""
 
     def _validar_configuracoes(self):
         """
@@ -171,22 +131,19 @@ class ClienteWaha:
         if self.config.timeout <= 0:
             raise ValueError("Timeout deve ser maior que 0")
 
+        if not self.config.api_key or len(self.config.api_key) < 8:
+            raise ValueError("WAHA_API_KEY deve ter pelo menos 8 caracteres")
+
     def _configurar_headers(self):
         """
-        Configura headers HTTP baseado na presença da API key.
+        Configura headers HTTP com autenticação obrigatória.
         """
         self.headers = {
             "Content-Type": "application/json",
             "User-Agent": "Bot-WhatsApp-Cliente/4.0",
+            "X-Api-Key": self.config.api_key,
         }
-
-        # Adicionar autenticação apenas se API key estiver configurada
-        if self.config.api_key:
-            # WAHA espera o header X-Api-Key
-            self.headers["X-Api-Key"] = self.config.api_key
-            logger.debug("Headers configurados COM autenticação")
-        else:
-            logger.warning("Headers configurados SEM autenticação")
+        logger.debug("Headers configurados com autenticação")
 
     def _inicializar_cache(self):
         """
